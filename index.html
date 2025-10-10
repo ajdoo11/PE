@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PE-Fabrikation</title>
+    <!-- Tailwind CSS CDN für einfaches Styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Inter Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #E0F2F7; /* Ein helles Blau für den Hintergrund */
+            color: #333;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        input[type="file"] {
+            display: block;
+            margin-bottom: 15px;
+            padding: 8px;
+            border: 1px solid #B3E0F2; /* Heller blauer Rand */
+            border-radius: 8px;
+            background-color: #fff;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        textarea, input[type="date"], input[type="text"] { /* input[type="text"] hinzugefügt */
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #B3E0F2; /* Heller blauer Rand */
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        button {
+            padding: 12px 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            color: white;
+            border: none;
+        }
+        /* Spezifische Farben für Buttons über Tailwind überschreiben */
+        .btn-blue-gradient {
+            background-image: linear-gradient(to right, #60A5FA, #3B82F6); /* Blauer Gradient */
+        }
+        .btn-blue-gradient:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+        .btn-red { /* Rot bleibt für Löschen */
+            background-color: #EF4444; /* Rot */
+        }
+        .btn-red:hover {
+            background-color: #DC2626;
+        }
+
+        .entry-card {
+            background-color: #fff;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+        .entry-card img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .entry-card p {
+            margin-bottom: 8px;
+            line-height: 1.5;
+        }
+        .entry-card strong {
+            color: #4A5568; /* Darker gray for labels */
+        }
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed; /* Stay in place */
+            z-index: 1000; /* Sit on top */
+            left: 0;
+            top: 0;
+            width: 100%; /* Full width */
+            height: 100%; /* Full height */
+            overflow: auto; /* Enable scroll if needed */
+            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: auto;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+            width: 80%; /* Could be responsive */
+            max-width: 400px;
+            text-align: center;
+            font-size: 1.1rem;
+            color: #333;
+        }
+        .modal-content button {
+            margin-top: 20px;
+            background-color: #3B82F6; /* Blau für Modalschliessen */
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+        .modal-content button:hover {
+            background-color: #2563EB;
+        }
+        /* Style for the hidden PDF content container */
+        #pdfContent {
+            /* Keep it hidden by default */
+            display: none;
+            /* These styles will be applied by JS temporarily for rendering */
+            /* position: fixed; top: 0; left: -9999px; opacity: 0; z-index: -1; */
+        }
+        /* New style for individual PDF page containers */
+        .pdf-page-container {
+            width: 210mm; /* A4 width */
+            min-height: 297mm; /* A4 height */
+            padding: 10mm;
+            box-sizing: border-box;
+            background-color: white;
+            page-break-after: always; /* For printing/PDF generation */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between; /* Space out content and footer */
+        }
+        .pdf-page-container:last-child {
+            page-break-after: auto; /* No page break after the last page */
+        }
+        .pdf-preview-item {
+            display: flex;
+            margin-bottom: 15px; /* Reduziert von 20px */
+            border: 1px solid #eee;
+            padding: 8px 10px; /* Vertikale Polsterung reduziert von 10px */
+            border-radius: 8px;
+            background-color: #f9f9f9;
+        }
+        .pdf-preview-item img {
+            width: 150px; /* Breite der Fotos im PDF auf 150px erhöht */
+            height: auto; /* Seitenverhältnis beibehalten */
+            object-fit: contain; /* Bild vollständig sichtbar, ohne Beschneidung */
+            margin-right: 20px; /* Abstand zum Text angepasst */
+            border-radius: 4px;
+            flex-shrink: 0; /* Verhindert, dass das Bild schrumpft */
+        }
+        .pdf-preview-item div {
+            flex-grow: 1;
+        }
+        .pdf-preview-item p {
+            margin-bottom: 5px;
+        }
+        .pdf-footer {
+            margin-top: auto; /* Push footer to the bottom */
+            text-align: left; /* Text linksbündig */
+            font-size: 0.9em;
+            color: #777;
+            padding-top: 15px; /* Etwas Platz nach oben zum Inhalt */
+        }
+        .pdf-footer p {
+            margin: 5px 0;
+        }
+        /* Zusätzliche Stilregel für Fettschrift im Footer */
+        .pdf-footer p.bold-text {
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body class="bg-blue-50 flex flex-col min-h-screen">
+    <div class="container bg-white p-6 rounded-xl shadow-lg mt-8 mb-8 flex-grow">
+        <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">PE-Fabrikation</h1>
+
+        <!-- Eingabeformular -->
+        <div class="mb-8 p-4 bg-blue-50 rounded-lg shadow-inner">
+            <h2 class="text-2xl font-semibold mb-4 text-blue-800">Neue Aufgabe hinzufügen</h2>
+            <input type="file" id="photoInput" accept="image/*" class="w-full p-3 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400">
+            <input type="text" id="objectNameInput" placeholder="Objektname..." class="w-full p-3 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400">
+            <textarea id="descriptionInput" rows="4" placeholder="Beschreibung der Aufgabe..." class="w-full p-3 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 resize-y"></textarea>
+            <input type="date" id="dueDateInput" class="w-full p-3 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400">
+            <button id="addEntryBtn" class="w-full mt-4 btn-blue-gradient hover:opacity-90 active:transform-none text-white font-bold py-3 px-6 rounded-lg shadow-md">
+                Aufgabe hinzufügen
+            </button>
+        </div>
+
+        <!-- Anzeigen der Aufgaben -->
+        <div id="entriesDisplay" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+            <!-- Aufgaben werden hier dynamisch eingefügt -->
+            <p id="noEntriesMessage" class="text-center text-gray-500 italic col-span-full">Noch keine Aufgaben vorhanden.</p>
+        </div>
+
+        <!-- PDF-Generierung Button -->
+        <div class="mt-8 text-center">
+            <button id="generatePdfBtn" class="btn-blue-gradient hover:opacity-90 active:transform-none text-white font-bold py-3 px-8 rounded-lg shadow-md">
+                Als PDF exportieren
+            </button>
+        </div>
+    </div>
+
+    <!-- Modale Nachricht für Ladezustand/Fehler -->
+    <div id="messageModal" class="modal hidden">
+        <div class="modal-content">
+            <p id="modalMessage"></p>
+            <button onclick="document.getElementById('messageModal').classList.add('hidden')">Schliessen</button>
+        </div>
+    </div>
+
+    <!-- Versteckter Container für die PDF-Vorschau (Layout für PDF-Generierung) -->
+    <div id="pdfContent" style="display: none;">
+        <!-- Die PDF-Seiten werden hier dynamisch hinzugefügt -->
+    </div>
+
+    <!-- jspdf und html2canvas Bibliotheken -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+    <script>
+        const photoInput = document.getElementById('photoInput');
+        const objectNameInput = document.getElementById('objectNameInput');
+        const descriptionInput = document.getElementById('descriptionInput');
+        const dueDateInput = document.getElementById('dueDateInput');
+        const addEntryBtn = document.getElementById('addEntryBtn');
+        const entriesDisplay = document.getElementById('entriesDisplay');
+        const generatePdfBtn = document.getElementById('generatePdfBtn');
+        const noEntriesMessage = document.getElementById('noEntriesMessage');
+        const messageModal = document.getElementById('messageModal');
+        const modalMessage = document.getElementById('modalMessage');
+        const pdfContent = document.getElementById('pdfContent');
+
+        // Array zum Speichern der Aufgaben
+        let entries = [];
+
+        // Funktion zum Anzeigen einer modalen Nachricht
+        function showModal(message) {
+            modalMessage.textContent = message;
+            messageModal.classList.remove('hidden');
+        }
+
+        // Funktion zum Rendern der Aufgaben auf der Seite
+        function renderEntries() {
+            entriesDisplay.innerHTML = ''; // Vorhandene Einträge löschen
+
+            if (entries.length === 0) {
+                noEntriesMessage.classList.remove('hidden');
+                entriesDisplay.appendChild(noEntriesMessage);
+            } else {
+                noEntriesMessage.classList.add('hidden');
+                entries.forEach((entry, index) => {
+                    const card = document.createElement('div');
+                    card.className = 'entry-card';
+                    card.innerHTML = `
+                        <img src="${entry.photoUrl}" alt="Aufgabenfoto" class="object-cover w-full h-48 sm:h-64 mb-4 rounded-lg">
+                        <p class="text-gray-700 text-lg mb-2"><strong>Objektname:</strong> ${entry.objectName}</p>
+                        <p class="text-gray-700 text-lg mb-2"><strong>Beschreibung:</strong> ${entry.description}</p>
+                        <p class="text-gray-600 text-md"><strong>Fällig bis:</strong> ${entry.dueDate || 'Kein Datum'}</p>
+                        <button onclick="removeEntry(${index})" class="mt-4 btn-red hover:bg-red-600 active:bg-red-700 text-white py-2 px-4 rounded-lg shadow-md text-sm">
+                            Löschen
+                        </button>
+                    `;
+                    entriesDisplay.appendChild(card);
+                });
+            }
+        }
+
+        // Funktion zum Entfernen einer Aufgabe
+        function removeEntry(index) {
+            entries.splice(index, 1); // Aufgabe aus dem Array entfernen
+            renderEntries(); // Anzeige aktualisieren
+        }
+
+        // Event Listener für den "Aufgabe hinzufügen" Button
+        addEntryBtn.addEventListener('click', () => {
+            const file = photoInput.files[0];
+            const objectName = objectNameInput.value.trim();
+            const description = descriptionInput.value.trim();
+            const dueDate = dueDateInput.value;
+
+            if (!file) {
+                showModal('Bitte wähle ein Foto aus.');
+                return;
+            }
+            if (!objectName) {
+                showModal('Bitte gib einen Objektnamen ein.');
+                return;
+            }
+            if (!description) {
+                showModal('Bitte gib eine Beschreibung ein.');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const newEntry = {
+                    id: Date.now(),
+                    photoUrl: e.target.result,
+                    objectName: objectName,
+                    description: description,
+                    dueDate: dueDate
+                };
+                entries.push(newEntry);
+                renderEntries();
+
+                // Formularfelder zurücksetzen
+                photoInput.value = '';
+                objectNameInput.value = '';
+                descriptionInput.value = '';
+                dueDateInput.value = '';
+            };
+            reader.readAsDataURL(file);
+        });
+
+        // Event Listener für den "Als PDF exportieren" Button
+        generatePdfBtn.addEventListener('click', async () => {
+            if (entries.length === 0) {
+                showModal('Es gibt keine Aufgaben zum Exportieren.');
+                return;
+            }
+
+            showModal('PDF wird generiert... Bitte warten.');
+
+            // PDF-Container leeren
+            pdfContent.innerHTML = '';
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4'); // Hochformat, mm-Einheiten, A4-Größe
+
+            const entriesPerPage = 4;
+            const totalPages = Math.ceil(entries.length / entriesPerPage);
+
+            try {
+                for (let i = 0; i < totalPages; i++) {
+                    const startIndex = i * entriesPerPage;
+                    const endIndex = Math.min(startIndex + entriesPerPage, entries.length);
+                    const currentEntries = entries.slice(startIndex, endIndex);
+
+                    // Neuen Container für diese PDF-Seite erstellen
+                    const pageContainer = document.createElement('div');
+                    pageContainer.className = 'pdf-page-container';
+
+                    // Titel für die Seite und Bereich für Einträge
+                    let footerContent = `<p>Erstellt am: ${new Date().toLocaleDateString('de-DE', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>`;
+
+                    // Nur auf der letzten Seite die gewünschten Zeilen hinzufügen
+                    if (i === totalPages - 1) {
+                        footerContent += `<p class="bold-text" style="margin-top: 15px;">Wurde erledigt, Datum:</p>`; // Fettschrift
+                        footerContent += `<p class="bold-text">Name:</p>`; // Fettschrift
+                    }
+
+                    pageContainer.innerHTML = `
+                        <h1 style="text-align: center; margin-bottom: 30px; color: #333; font-family: 'Inter', sans-serif;">Meine PE-Fabrikation Aufgaben</h1>
+                        <div class="pdf-entries-on-page" style="flex-grow: 1;">
+                            <!-- Einträge werden hier dynamisch hinzugefügt -->
+                        </div>
+                        <div class="pdf-footer">
+                            ${footerContent}
+                        </div>
+                    `;
+                    const entriesOnPageContainer = pageContainer.querySelector('.pdf-entries-on-page');
+
+                    currentEntries.forEach(entry => {
+                        const pdfItem = document.createElement('div');
+                        pdfItem.className = 'pdf-preview-item';
+                        pdfItem.innerHTML = `
+                            <img src="${entry.photoUrl}" alt="Aufgabenfoto">
+                            <div>
+                                <p style="font-weight: bold; margin-bottom: 5px;">Objektname:</p>
+                                <p>${entry.objectName}</p>
+                                <p style="font-weight: bold; margin-top: 10px; margin-bottom: 5px;">Beschreibung:</p>
+                                <p>${entry.description}</p>
+                                <p style="font-weight: bold; margin-top: 10px; margin-bottom: 5px;">Fällig bis:</p>
+                                <p>${entry.dueDate || 'Kein Datum'}</p>
+                            </div>
+                        `;
+                        entriesOnPageContainer.appendChild(pdfItem);
+                    });
+
+                    pdfContent.appendChild(pageContainer);
+
+                    // Temporär sichtbar, aber ausserhalb des Bildschirms positionieren
+                    pdfContent.style.cssText = 'position: fixed; top: 0; left: -9999px; opacity: 0; z-index: -1; display: flex; flex-direction: column;';
+                    await new Promise(resolve => setTimeout(resolve, 50)); // Kurze Verzögerung
+
+                    const canvas = await html2canvas(pageContainer, {
+                        scale: 2, // Höhere Skalierung für bessere PDF-Qualität
+                        logging: false,
+                        useCORS: true,
+                    });
+
+                    if (!canvas || !(canvas instanceof HTMLCanvasElement)) {
+                        throw new Error(`html2canvas konnte den Inhalt für Seite ${i + 1} nicht in ein Bild umwandeln.`);
+                    }
+
+                    const imgData = canvas.toDataURL('image/jpeg', 0.9);
+                    if (!imgData || typeof imgData !== 'string' || imgData.length < 100) {
+                        throw new Error(`Fehler: Konnte keine gültigen Bilddaten für Seite ${i + 1} extrahieren.`);
+                    }
+
+                    if (i > 0) {
+                        doc.addPage();
+                    }
+                    const imgWidth = 210; // A4 width in mm
+                    const imgHeight = canvas.height * imgWidth / canvas.width;
+
+                    doc.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
+
+                    // Cleanup: Remove the page container from pdfContent after rendering
+                    pdfContent.removeChild(pageContainer);
+                }
+
+                doc.save('Meine-PE-Fabrikation-Aufgaben.pdf');
+                showModal('PDF erfolgreich generiert!');
+
+            } catch (error) {
+                console.error('Fehler beim Generieren des PDFs:', error);
+                let displayMessage = 'Es gab ein Problem beim Exportieren der PDF.';
+                if (error instanceof Error && typeof error.message === 'string' && error.message.length > 0) {
+                    displayMessage += ` Details: ${error.message}`;
+                } else if (typeof error === 'string' && error.length > 0) {
+                    displayMessage += ` Details: ${error}`;
+                } else {
+                    displayMessage += ' Ein unbekannter Fehler ist aufgetreten.';
+                }
+                showModal(displayMessage + ' Bitte versuchen Sie es erneut.');
+            } finally {
+                // pdfContent wieder verstecken, unabhängig davon, ob ein Fehler aufgetreten ist
+                pdfContent.style.cssText = 'display: none;';
+            }
+        });
+
+        // Initiales Rendern beim Laden der Seite
+        renderEntries();
+    </script>
+</body>
+</html>
