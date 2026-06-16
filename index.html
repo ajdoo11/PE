@@ -1,452 +1,834 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="de" class="h-full bg-slate-950 text-slate-100">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PE-Fabrikation</title>
-    <!-- Tailwind CSS CDN für einfaches Styling -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Inter Font -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #E0F2F7; /* Ein helles Blau für den Hintergrund */
-            color: #333;
-        }
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        input[type="file"] {
-            display: block;
-            margin-bottom: 15px;
-            padding: 8px;
-            border: 1px solid #B3E0F2; /* Heller blauer Rand */
-            border-radius: 8px;
-            background-color: #fff;
-            width: 100%;
-            box-sizing: border-box;
-        }
-        textarea, input[type="date"], input[type="text"] { /* input[type="text"] hinzugefügt */
-            width: 100%;
-            padding: 12px;
-            margin-bottom: 15px;
-            border: 1px solid #B3E0F2; /* Heller blauer Rand */
-            border-radius: 8px;
-            box-sizing: border-box;
-            font-size: 16px;
-        }
-        button {
-            padding: 12px 20px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.3s ease, transform 0.2s ease;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            color: white;
-            border: none;
-        }
-        /* Spezifische Farben für Buttons über Tailwind überschreiben */
-        .btn-blue-gradient {
-            background-image: linear-gradient(to right, #60A5FA, #3B82F6); /* Blauer Gradient */
-        }
-        .btn-blue-gradient:hover {
-            opacity: 0.9;
-            transform: translateY(-1px);
-        }
-        .btn-red { /* Rot bleibt für Löschen */
-            background-color: #EF4444; /* Rot */
-        }
-        .btn-red:hover {
-            background-color: #DC2626;
-        }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#020617">
+<title>AI NutriTrack – KI Kalorienzähler</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-        .entry-card {
-            background-color: #fff;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 15px;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-        }
-        .entry-card img {
-            max-width: 100%;
-            height: auto;
-            border-radius: 8px;
-            margin-bottom: 15px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-        .entry-card p {
-            margin-bottom: 8px;
-            line-height: 1.5;
-        }
-        .entry-card strong {
-            color: #4A5568; /* Darker gray for labels */
-        }
-        .modal {
-            display: none; /* Hidden by default */
-            position: fixed; /* Stay in place */
-            z-index: 1000; /* Sit on top */
-            left: 0;
-            top: 0;
-            width: 100%; /* Full width */
-            height: 100%; /* Full height */
-            overflow: auto; /* Enable scroll if needed */
-            background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .modal-content {
-            background-color: #fefefe;
-            margin: auto;
-            padding: 20px;
-            border-radius: 12px;
-            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
-            width: 80%; /* Could be responsive */
-            max-width: 400px;
-            text-align: center;
-            font-size: 1.1rem;
-            color: #333;
-        }
-        .modal-content button {
-            margin-top: 20px;
-            background-color: #3B82F6; /* Blau für Modalschliessen */
-            color: white;
-            padding: 10px 20px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-        }
-        .modal-content button:hover {
-            background-color: #2563EB;
-        }
-        /* Style for the hidden PDF content container */
-        #pdfContent {
-            /* Keep it hidden by default */
-            display: none;
-            /* These styles will be applied by JS temporarily for rendering */
-            /* position: fixed; top: 0; left: -9999px; opacity: 0; z-index: -1; */
-        }
-        /* New style for individual PDF page containers */
-        .pdf-page-container {
-            width: 210mm; /* A4 width */
-            min-height: 297mm; /* A4 height */
-            padding: 10mm;
-            box-sizing: border-box;
-            background-color: white;
-            page-break-after: always; /* For printing/PDF generation */
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between; /* Space out content and footer */
-        }
-        .pdf-page-container:last-child {
-            page-break-after: auto; /* No page break after the last page */
-        }
-        .pdf-preview-item {
-            display: flex;
-            margin-bottom: 15px; /* Reduziert von 20px */
-            border: 1px solid #eee;
-            padding: 8px 10px; /* Vertikale Polsterung reduziert von 10px */
-            border-radius: 8px;
-            background-color: #f9f9f9;
-        }
-        .pdf-preview-item img {
-            width: 150px; /* Breite der Fotos im PDF auf 150px erhöht */
-            height: auto; /* Seitenverhältnis beibehalten */
-            object-fit: contain; /* Bild vollständig sichtbar, ohne Beschneidung */
-            margin-right: 20px; /* Abstand zum Text angepasst */
-            border-radius: 4px;
-            flex-shrink: 0; /* Verhindert, dass das Bild schrumpft */
-        }
-        .pdf-preview-item div {
-            flex-grow: 1;
-        }
-        .pdf-preview-item p {
-            margin-bottom: 5px;
-        }
-        .pdf-footer {
-            margin-top: auto; /* Push footer to the bottom */
-            text-align: left; /* Text linksbündig */
-            font-size: 0.9em;
-            color: #777;
-            padding-top: 15px; /* Etwas Platz nach oben zum Inhalt */
-        }
-        .pdf-footer p {
-            margin: 5px 0;
-        }
-        /* Zusätzliche Stilregel für Fettschrift im Footer */
-        .pdf-footer p.bold-text {
-            font-weight: bold;
-        }
-    </style>
+<!-- Firebase (compat 10.13.2) -->
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.2/firebase-firestore-compat.js"></script>
+
+<script>
+tailwind.config = { darkMode:'class', theme:{ extend:{ colors:{ brand:{
+    50:'#f0fdf4',100:'#dcfce7',500:'#22c55e',600:'#16a34a',700:'#15803d',900:'#14532d'
+}}}}}
+</script>
+<style>
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:#0f172a}
+::-webkit-scrollbar-thumb{background:#334155;border-radius:3px}
+nav.mobile-nav{padding-bottom:calc(0.5rem + env(safe-area-inset-bottom))}
+</style>
 </head>
-<body class="bg-blue-50 flex flex-col min-h-screen">
-    <div class="container bg-white p-6 rounded-xl shadow-lg mt-8 mb-8 flex-grow">
-        <h1 class="text-3xl font-bold text-center mb-6 text-gray-800">PE-Fabrikation</h1>
+<body class="h-full font-sans antialiased overflow-x-hidden">
 
-        <!-- Eingabeformular -->
-        <div class="mb-8 p-4 bg-blue-50 rounded-lg shadow-inner">
-            <h2 class="text-2xl font-semibold mb-4 text-blue-800">Neue Aufgabe hinzufügen</h2>
-            <input type="file" id="photoInput" accept="image/*" class="w-full p-3 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400">
-            <input type="text" id="objectNameInput" placeholder="Objektname..." class="w-full p-3 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400">
-            <textarea id="descriptionInput" rows="4" placeholder="Beschreibung der Aufgabe..." class="w-full p-3 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 resize-y"></textarea>
-            <input type="date" id="dueDateInput" class="w-full p-3 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400">
-            <button id="addEntryBtn" class="w-full mt-4 btn-blue-gradient hover:opacity-90 active:transform-none text-white font-bold py-3 px-6 rounded-lg shadow-md">
-                Aufgabe hinzufügen
-            </button>
+<!-- =================================================================
+     1) ANMELDESCHIRM (Firebase Auth)
+================================================================= -->
+<div id="authScreen" class="fixed inset-0 bg-slate-950 z-[60] hidden flex-col items-center justify-center p-6 overflow-y-auto">
+    <div class="max-w-sm w-full my-8">
+        <div class="text-center mb-8">
+            <div class="w-16 h-16 rounded-2xl bg-brand-500/10 flex items-center justify-center border border-brand-500/30 text-brand-500 mx-auto mb-3"><i class="fa-solid fa-apple-whole text-3xl"></i></div>
+            <h1 class="font-bold text-2xl tracking-tight">AI NutriTrack</h1>
+            <p id="authSubtitle" class="text-sm text-slate-400 mt-1">Melde dich an, um deine Daten überall zu synchronisieren.</p>
         </div>
 
-        <!-- Anzeigen der Aufgaben -->
-        <div id="entriesDisplay" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
-            <!-- Aufgaben werden hier dynamisch eingefügt -->
-            <p id="noEntriesMessage" class="text-center text-gray-500 italic col-span-full">Noch keine Aufgaben vorhanden.</p>
+        <div id="configWarning" class="hidden bg-amber-500/10 border border-amber-500/30 rounded-xl p-3 text-xs text-amber-300 mb-4">
+            <strong>Firebase-Config fehlt.</strong> Trage oben im Code deine eigene <code>firebaseConfig</code> ein (Firebase Console → Projekteinstellungen → Web-App).
         </div>
 
-        <!-- PDF-Generierung Button -->
-        <div class="mt-8 text-center">
-            <button id="generatePdfBtn" class="btn-blue-gradient hover:opacity-90 active:transform-none text-white font-bold py-3 px-8 rounded-lg shadow-md">
-                Als PDF exportieren
-            </button>
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-3">
+            <div>
+                <label class="text-xs text-slate-400 block mb-1">Benutzername</label>
+                <input type="text" id="auth_user" autocapitalize="none" autocomplete="username" placeholder="z.B. ajdin" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-brand-500">
+            </div>
+            <div>
+                <label class="text-xs text-slate-400 block mb-1">PIN (4 Ziffern)</label>
+                <input type="password" id="auth_pin" inputmode="numeric" maxlength="4" placeholder="••••" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-slate-100 tracking-[0.5em] focus:outline-none focus:border-brand-500">
+            </div>
+            <p id="authError" class="text-xs text-red-400 hidden"></p>
+            <button id="authSubmitBtn" onclick="doAuth()" class="w-full bg-brand-500 hover:bg-brand-600 text-white font-semibold py-2.5 rounded-xl transition-all">Anmelden</button>
+            <p class="text-xs text-slate-500 text-center pt-1">
+                <span id="authToggleText">Noch kein Konto?</span>
+                <button onclick="toggleAuthMode()" id="authToggleBtn" class="text-brand-400 font-semibold hover:underline ml-1">Registrieren</button>
+            </p>
+        </div>
+        <p class="text-[11px] text-slate-600 text-center mt-4">Jede Person legt ihr eigenes Konto an (Benutzername + PIN). Daten sind pro Benutzer getrennt.</p>
+    </div>
+</div>
+
+<!-- =================================================================
+     2) PROFIL-SETUP (beim ersten Login)
+================================================================= -->
+<div id="setupScreen" class="fixed inset-0 bg-slate-950 z-[58] hidden flex-col items-center justify-center p-6 overflow-y-auto">
+    <div class="max-w-md w-full my-8">
+        <div class="text-center mb-6">
+            <div class="w-14 h-14 rounded-2xl bg-brand-500/10 flex items-center justify-center border border-brand-500/30 text-brand-500 mx-auto mb-3"><i class="fa-solid fa-user-gear text-2xl"></i></div>
+            <h1 class="font-bold text-xl tracking-tight">Dein Profil</h1>
+            <p class="text-sm text-slate-400 mt-1">Daraus berechnet die App dein tägliches Kalorienziel.</p>
+        </div>
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 space-y-3">
+            <div><label class="text-xs text-slate-400 block mb-1">Name</label>
+                <input type="text" id="su_name" placeholder="Dein Name" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-brand-500"></div>
+            <div class="grid grid-cols-2 gap-3">
+                <div><label class="text-xs text-slate-400 block mb-1">Geschlecht</label>
+                    <select id="su_sex" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-brand-500"><option value="male">Männlich</option><option value="female">Weiblich</option></select></div>
+                <div><label class="text-xs text-slate-400 block mb-1">Alter</label>
+                    <input type="number" id="su_age" placeholder="30" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-brand-500"></div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div><label class="text-xs text-slate-400 block mb-1">Grösse (cm)</label>
+                    <input type="number" id="su_height" placeholder="180" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-brand-500"></div>
+                <div><label class="text-xs text-slate-400 block mb-1">Gewicht (kg)</label>
+                    <input type="number" step="0.1" id="su_weight" placeholder="80" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-brand-500"></div>
+            </div>
+            <div><label class="text-xs text-slate-400 block mb-1">Aktivität</label>
+                <select id="su_activity" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-brand-500">
+                    <option value="sedentary">Wenig aktiv (Bürojob)</option><option value="light" selected>Leicht aktiv (1–3x Sport)</option><option value="moderate">Moderat aktiv (3–5x)</option><option value="active">Sehr aktiv (6–7x)</option><option value="veryactive">Extrem aktiv (körperl. Arbeit + Sport)</option></select></div>
+            <div><label class="text-xs text-slate-400 block mb-1">Ziel</label>
+                <select id="su_goal" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-brand-500">
+                    <option value="lose">Abnehmen (−500 kcal)</option><option value="maintain" selected>Halten</option><option value="gain">Aufbauen (+350 kcal)</option></select></div>
+            <button onclick="saveSetup()" class="w-full bg-brand-500 hover:bg-brand-600 text-white font-semibold py-2.5 rounded-xl mt-2 transition-all">Speichern & starten</button>
+            <button onclick="logout()" class="w-full text-xs text-slate-500 hover:text-slate-300 py-1">Abmelden</button>
         </div>
     </div>
+</div>
 
-    <!-- Modale Nachricht für Ladezustand/Fehler -->
-    <div id="messageModal" class="modal hidden">
-        <div class="modal-content">
-            <p id="modalMessage"></p>
-            <button onclick="document.getElementById('messageModal').classList.add('hidden')">Schliessen</button>
+<!-- =================================================================
+     3) HAUPT-APP
+================================================================= -->
+<div id="app" class="hidden flex-col justify-between min-h-full pb-24 md:pb-0">
+
+    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-40 px-4 py-3">
+        <div class="max-w-6xl mx-auto flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2.5 min-w-0">
+                <div class="w-10 h-10 rounded-xl bg-brand-500/10 flex items-center justify-center border border-brand-500/30 text-brand-500 shrink-0"><i class="fa-solid fa-apple-whole text-xl"></i></div>
+                <div class="min-w-0">
+                    <h1 class="font-bold text-lg leading-tight tracking-tight truncate">AI NutriTrack</h1>
+                    <p class="text-xs text-slate-400 truncate"><span id="hdrName">–</span> · <span class="text-emerald-400"><i class="fa-solid fa-cloud text-[10px]"></i> synchronisiert</span></p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2 shrink-0">
+                <button onclick="openProfileModal()" title="Profil bearbeiten" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 flex items-center justify-center transition-colors"><i class="fa-solid fa-user-pen text-sm"></i></button>
+                <button onclick="logout()" title="Abmelden" class="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 flex items-center justify-center transition-colors"><i class="fa-solid fa-right-from-bracket text-sm"></i></button>
+            </div>
         </div>
-    </div>
+        <div class="max-w-6xl mx-auto flex justify-end mt-1"><p class="text-[11px] text-slate-500"><span id="currentDateDisplay">–</span> · <span id="currentTimeDisplay">–</span></p></div>
+    </header>
 
-    <!-- Versteckter Container für die PDF-Vorschau (Layout für PDF-Generierung) -->
-    <div id="pdfContent" style="display: none;">
-        <!-- Die PDF-Seiten werden hier dynamisch hinzugefügt -->
-    </div>
+    <main class="flex-1 max-w-6xl w-full mx-auto p-4 space-y-6">
 
-    <!-- jspdf und html2canvas Bibliotheken -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+        <!-- HEUTE -->
+        <section id="view-today" class="space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col items-center relative overflow-hidden">
+                    <div class="self-start mb-4"><h3 class="text-sm font-semibold text-slate-400">Tagesziel Kalorien</h3><p class="text-[10px] text-slate-500">KI-Limit für <span id="ringProfileName" class="text-slate-400 font-medium">dich</span></p></div>
+                    <div class="relative w-40 h-40 flex items-center justify-center">
+                        <svg class="w-full h-full transform -rotate-90" viewBox="0 0 120 120">
+                            <circle cx="60" cy="60" r="50" fill="transparent" stroke="#1e293b" stroke-width="8"/>
+                            <circle id="calorieProgressCircle" cx="60" cy="60" r="50" fill="transparent" stroke="#22c55e" stroke-width="8" stroke-dasharray="314.16" stroke-dashoffset="314.16" stroke-linecap="round" class="transition-all duration-700 ease-out"/>
+                        </svg>
+                        <div class="absolute text-center"><span class="text-3xl font-extrabold text-white" id="todayCaloriesEaten">0</span><div class="text-[10px] text-slate-500 uppercase tracking-widest mt-0.5">von <span id="todayCalorieTarget">0</span> kcal</div></div>
+                    </div>
+                    <div class="mt-4 flex justify-between w-full text-xs text-slate-400 border-t border-slate-800/60 pt-3"><span>Verbleibend:</span><span class="font-bold text-white" id="todayCalorieRemaining">0 kcal</span></div>
+                </div>
 
-    <script>
-        const photoInput = document.getElementById('photoInput');
-        const objectNameInput = document.getElementById('objectNameInput');
-        const descriptionInput = document.getElementById('descriptionInput');
-        const dueDateInput = document.getElementById('dueDateInput');
-        const addEntryBtn = document.getElementById('addEntryBtn');
-        const entriesDisplay = document.getElementById('entriesDisplay');
-        const generatePdfBtn = document.getElementById('generatePdfBtn');
-        const noEntriesMessage = document.getElementById('noEntriesMessage');
-        const messageModal = document.getElementById('messageModal');
-        const modalMessage = document.getElementById('modalMessage');
-        const pdfContent = document.getElementById('pdfContent');
-
-        // Array zum Speichern der Aufgaben
-        let entries = [];
-
-        // Funktion zum Anzeigen einer modalen Nachricht
-        function showModal(message) {
-            modalMessage.textContent = message;
-            messageModal.classList.remove('hidden');
-        }
-
-        // Funktion zum Rendern der Aufgaben auf der Seite
-        function renderEntries() {
-            entriesDisplay.innerHTML = ''; // Vorhandene Einträge löschen
-
-            if (entries.length === 0) {
-                noEntriesMessage.classList.remove('hidden');
-                entriesDisplay.appendChild(noEntriesMessage);
-            } else {
-                noEntriesMessage.classList.add('hidden');
-                entries.forEach((entry, index) => {
-                    const card = document.createElement('div');
-                    card.className = 'entry-card';
-                    card.innerHTML = `
-                        <img src="${entry.photoUrl}" alt="Aufgabenfoto" class="object-cover w-full h-48 sm:h-64 mb-4 rounded-lg">
-                        <p class="text-gray-700 text-lg mb-2"><strong>Objektname:</strong> ${entry.objectName}</p>
-                        <p class="text-gray-700 text-lg mb-2"><strong>Beschreibung:</strong> ${entry.description}</p>
-                        <p class="text-gray-600 text-md"><strong>Fällig bis:</strong> ${entry.dueDate || 'Kein Datum'}</p>
-                        <button onclick="removeEntry(${index})" class="mt-4 btn-red hover:bg-red-600 active:bg-red-700 text-white py-2 px-4 rounded-lg shadow-md text-sm">
-                            Löschen
-                        </button>
-                    `;
-                    entriesDisplay.appendChild(card);
-                });
-            }
-        }
-
-        // Funktion zum Entfernen einer Aufgabe
-        function removeEntry(index) {
-            entries.splice(index, 1); // Aufgabe aus dem Array entfernen
-            renderEntries(); // Anzeige aktualisieren
-        }
-
-        // Event Listener für den "Aufgabe hinzufügen" Button
-        addEntryBtn.addEventListener('click', () => {
-            const file = photoInput.files[0];
-            const objectName = objectNameInput.value.trim();
-            const description = descriptionInput.value.trim();
-            const dueDate = dueDateInput.value;
-
-            if (!file) {
-                showModal('Bitte wähle ein Foto aus.');
-                return;
-            }
-            if (!objectName) {
-                showModal('Bitte gib einen Objektnamen ein.');
-                return;
-            }
-            if (!description) {
-                showModal('Bitte gib eine Beschreibung ein.');
-                return;
-            }
-
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const newEntry = {
-                    id: Date.now(),
-                    photoUrl: e.target.result,
-                    objectName: objectName,
-                    description: description,
-                    dueDate: dueDate
-                };
-                entries.push(newEntry);
-                renderEntries();
-
-                // Formularfelder zurücksetzen
-                photoInput.value = '';
-                objectNameInput.value = '';
-                descriptionInput.value = '';
-                dueDateInput.value = '';
-            };
-            reader.readAsDataURL(file);
-        });
-
-        // Event Listener für den "Als PDF exportieren" Button
-        generatePdfBtn.addEventListener('click', async () => {
-            if (entries.length === 0) {
-                showModal('Es gibt keine Aufgaben zum Exportieren.');
-                return;
-            }
-
-            showModal('PDF wird generiert... Bitte warten.');
-
-            // PDF-Container leeren
-            pdfContent.innerHTML = '';
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF('p', 'mm', 'a4'); // Hochformat, mm-Einheiten, A4-Größe
-
-            const entriesPerPage = 4;
-            const totalPages = Math.ceil(entries.length / entriesPerPage);
-
-            try {
-                for (let i = 0; i < totalPages; i++) {
-                    const startIndex = i * entriesPerPage;
-                    const endIndex = Math.min(startIndex + entriesPerPage, entries.length);
-                    const currentEntries = entries.slice(startIndex, endIndex);
-
-                    // Neuen Container für diese PDF-Seite erstellen
-                    const pageContainer = document.createElement('div');
-                    pageContainer.className = 'pdf-page-container';
-
-                    // Titel für die Seite und Bereich für Einträge
-                    let footerContent = `<p>Erstellt am: ${new Date().toLocaleDateString('de-DE', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>`;
-
-                    // Nur auf der letzten Seite die gewünschten Zeilen hinzufügen
-                    if (i === totalPages - 1) {
-                        footerContent += `<p class="bold-text" style="margin-top: 15px;">Wurde erledigt, Datum:</p>`; // Fettschrift
-                        footerContent += `<p class="bold-text">Name:</p>`; // Fettschrift
-                    }
-
-                    pageContainer.innerHTML = `
-                        <h1 style="text-align: center; margin-bottom: 30px; color: #333; font-family: 'Inter', sans-serif;">Meine PE-Fabrikation Aufgaben</h1>
-                        <div class="pdf-entries-on-page" style="flex-grow: 1;">
-                            <!-- Einträge werden hier dynamisch hinzugefügt -->
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between">
+                    <h3 class="text-sm font-semibold text-slate-400 mb-4">Makronährstoffe</h3>
+                    <div class="space-y-4 flex-1 flex flex-col justify-center">
+                        <div><div class="flex justify-between text-xs mb-1.5"><span class="text-slate-400 flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span> Kohlenhydrate</span><span class="font-medium text-slate-200"><span id="macroCarbs">0</span>g / <span id="macroCarbsTarget">0</span>g</span></div><div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden"><div id="macroCarbsBar" class="bg-amber-500 h-full rounded-full transition-all duration-500" style="width:0%"></div></div></div>
+                        <div><div class="flex justify-between text-xs mb-1.5"><span class="text-slate-400 flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-red-500"></span> Proteine</span><span class="font-medium text-slate-200"><span id="macroProtein">0</span>g / <span id="macroProteinTarget">0</span>g</span></div><div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden"><div id="macroProteinBar" class="bg-red-500 h-full rounded-full transition-all duration-500" style="width:0%"></div></div></div>
+                        <div><div class="flex justify-between text-xs mb-1.5"><span class="text-slate-400 flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-sky-500"></span> Fette</span><span class="font-medium text-slate-200"><span id="macroFat">0</span>g / <span id="macroFatTarget">0</span>g</span></div><div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden"><div id="macroFatBar" class="bg-sky-500 h-full rounded-full transition-all duration-500" style="width:0%"></div></div></div>
+                    </div>
+                    <div class="mt-4 pt-3 border-t border-slate-800/60 flex justify-between items-center text-xs text-slate-400">
+                        <span>Wasser <span id="waterTargetHint" class="text-slate-600"></span></span>
+                        <div class="flex items-center gap-1">
+                            <button onclick="adjustWater(-250)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-sky-400"><i class="fa-solid fa-minus text-[10px]"></i></button>
+                            <span class="font-semibold text-slate-200 px-1" id="waterCount">0 ml</span>
+                            <button onclick="adjustWater(250)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-sky-400"><i class="fa-solid fa-plus text-[10px]"></i></button>
                         </div>
-                        <div class="pdf-footer">
-                            ${footerContent}
-                        </div>
-                    `;
-                    const entriesOnPageContainer = pageContainer.querySelector('.pdf-entries-on-page');
+                    </div>
+                </div>
 
-                    currentEntries.forEach(entry => {
-                        const pdfItem = document.createElement('div');
-                        pdfItem.className = 'pdf-preview-item';
-                        pdfItem.innerHTML = `
-                            <img src="${entry.photoUrl}" alt="Aufgabenfoto">
-                            <div>
-                                <p style="font-weight: bold; margin-bottom: 5px;">Objektname:</p>
-                                <p>${entry.objectName}</p>
-                                <p style="font-weight: bold; margin-top: 10px; margin-bottom: 5px;">Beschreibung:</p>
-                                <p>${entry.description}</p>
-                                <p style="font-weight: bold; margin-top: 10px; margin-bottom: 5px;">Fällig bis:</p>
-                                <p>${entry.dueDate || 'Kein Datum'}</p>
-                            </div>
-                        `;
-                        entriesOnPageContainer.appendChild(pdfItem);
-                    });
+                <div class="bg-gradient-to-br from-slate-900 to-slate-900/60 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden">
+                    <div class="absolute -right-6 -top-6 w-24 h-24 bg-purple-500/10 rounded-full blur-xl"></div>
+                    <div>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-purple-500/20 text-purple-300 border border-purple-500/30 inline-flex items-center gap-1 mb-2"><i class="fa-solid fa-wand-magic-sparkles"></i> AI Powered</span>
+                        <h3 class="text-base font-bold text-white mb-1.5">Essen per Foto erfassen</h3>
+                        <p class="text-xs text-slate-400 leading-relaxed mb-4">Foto deiner Mahlzeit/deines Getränks machen – die KI schätzt Kalorien & Nährwerte.</p>
+                    </div>
+                    <div class="space-y-2">
+                        <label for="foodPhotoUpload" class="w-full bg-brand-500 hover:bg-brand-600 text-white font-semibold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-brand-500/20 cursor-pointer active:scale-95 text-sm"><i class="fa-solid fa-camera text-base"></i><span>Foto aufnehmen / hochladen</span></label>
+                        <input type="file" id="foodPhotoUpload" accept="image/*" capture="environment" class="hidden" onchange="handlePhotoSelected(event)">
+                        <button onclick="openTextAddModal()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold py-2 px-4 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 text-xs"><i class="fa-solid fa-pen-nib"></i><span>Oder Text beschreiben</span></button>
+                    </div>
+                </div>
+            </div>
 
-                    pdfContent.appendChild(pageContainer);
+            <div id="targetInfoBox" class="bg-slate-900 border border-slate-800 rounded-xl p-4 text-xs text-slate-400 hidden">
+                <div class="flex flex-wrap gap-x-6 gap-y-2 items-center">
+                    <span class="font-semibold text-slate-200 flex items-center gap-1.5"><i class="fa-solid fa-calculator text-brand-500"></i> Deine KI-Berechnung:</span>
+                    <span>BMR: <strong id="infoBmr" class="text-slate-200">–</strong> kcal</span>
+                    <span>TDEE: <strong id="infoTdee" class="text-slate-200">–</strong> kcal</span>
+                    <span>Ziel: <strong id="infoGoal" class="text-slate-200">–</strong></span>
+                    <span>→ Tageslimit: <strong id="infoTarget" class="text-brand-400">–</strong> kcal</span>
+                </div>
+                <p id="floorWarning" class="mt-2 text-amber-400/90 hidden"><i class="fa-solid fa-circle-info"></i> Hinweis: Dein berechnetes Limit wäre sehr niedrig – aus Gesundheitsgründen auf einen sinnvollen Mindestwert angehoben. Für ein konkretes Defizit lohnt sich Rücksprache mit Arzt/Ernährungsberatung.</p>
+            </div>
 
-                    // Temporär sichtbar, aber ausserhalb des Bildschirms positionieren
-                    pdfContent.style.cssText = 'position: fixed; top: 0; left: -9999px; opacity: 0; z-index: -1; display: flex; flex-direction: column;';
-                    await new Promise(resolve => setTimeout(resolve, 50)); // Kurze Verzögerung
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                <div class="flex justify-between items-center mb-4"><h3 class="font-bold text-base text-white flex items-center gap-2"><i class="fa-solid fa-utensils text-brand-500"></i> Tagesprotokoll</h3><span class="text-xs text-slate-400" id="todayMealsCount">0 Mahlzeiten</span></div>
+                <div id="mealsListContainer" class="space-y-3 min-h-[100px] flex flex-col justify-center">
+                    <div id="noMealsPlaceholder" class="text-center py-8 text-slate-500"><div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center mx-auto mb-3"><i class="fa-solid fa-receipt text-lg"></i></div><p class="text-sm">Noch keine Mahlzeiten für heute.</p><p class="text-xs text-slate-600 mt-1">Lade oben ein Foto hoch, um zu starten!</p></div>
+                </div>
+            </div>
+        </section>
 
-                    const canvas = await html2canvas(pageContainer, {
-                        scale: 2, // Höhere Skalierung für bessere PDF-Qualität
-                        logging: false,
-                        useCORS: true,
-                    });
+        <!-- WOCHE -->
+        <section id="view-week" class="hidden space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between">
+                    <div><h3 class="text-sm font-semibold text-slate-400 mb-1">Wochen-Durchschnitt</h3><p class="text-3xl font-extrabold text-brand-500"><span id="weekAvgCalories">0</span> kcal/Tag</p><p class="text-xs text-slate-400 mt-1">Durchschnitt der Tage mit Einträgen.</p></div>
+                    <div class="space-y-3 my-6 border-y border-slate-800 py-4">
+                        <div class="flex justify-between text-xs"><span class="text-slate-400">Unter Limit:</span><span class="font-bold text-emerald-400" id="weekTargetHit">0 / 0 Tagen</span></div>
+                        <div class="flex justify-between text-xs"><span class="text-slate-400">Niedrigster Tag:</span><span class="font-bold text-slate-200" id="weekBestDay">–</span></div>
+                        <div class="flex justify-between text-xs"><span class="text-slate-400">Höchster Tag:</span><span class="font-bold text-slate-200" id="weekHighDay">–</span></div>
+                    </div>
+                    <div class="text-xs text-slate-500 flex items-center gap-1.5 bg-slate-950 p-2.5 rounded-lg border border-slate-800"><i class="fa-solid fa-circle-info text-slate-400"></i><span id="weekStatusText">Noch keine Daten.</span></div>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:col-span-2"><h3 class="text-sm font-semibold text-slate-400 mb-4">Kalorienverlauf der letzten 7 Tage</h3><div class="h-64"><canvas id="weeklyChart"></canvas></div></div>
+            </div>
+        </section>
 
-                    if (!canvas || !(canvas instanceof HTMLCanvasElement)) {
-                        throw new Error(`html2canvas konnte den Inhalt für Seite ${i + 1} nicht in ein Bild umwandeln.`);
-                    }
+        <!-- MONAT -->
+        <section id="view-month" class="hidden space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 flex flex-col justify-between">
+                    <div><h3 class="text-sm font-semibold text-slate-400 mb-1">Monats-Übersicht</h3><p class="text-3xl font-extrabold text-brand-500"><span id="monthAvgCalories">0</span> kcal/Tag</p><p class="text-xs text-slate-400 mt-1">Durchschnitt der letzten 30 Tage mit Einträgen.</p></div>
+                    <div class="grid grid-cols-2 gap-3 my-6">
+                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800/80"><span class="text-[10px] text-slate-500 block uppercase font-bold">Protein Total</span><span class="text-lg font-bold text-red-400"><span id="monthProtein">0</span> g</span></div>
+                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800/80"><span class="text-[10px] text-slate-500 block uppercase font-bold">Fett Total</span><span class="text-lg font-bold text-sky-400"><span id="monthFat">0</span> g</span></div>
+                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800/80"><span class="text-[10px] text-slate-500 block uppercase font-bold">Wasser gesamt</span><span class="text-lg font-bold text-blue-400"><span id="monthWater">0</span> L</span></div>
+                        <div class="bg-slate-950 p-3 rounded-xl border border-slate-800/80"><span class="text-[10px] text-slate-500 block uppercase font-bold">Erfasste Tage</span><span class="text-lg font-bold text-emerald-400" id="monthDays">0</span></div>
+                    </div>
+                    <div class="text-xs text-slate-400 bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3"><span class="font-bold text-slate-200">Trend:</span><p class="mt-0.5" id="monthTrend">Sammle ein paar Tage Daten für eine Prognose.</p></div>
+                </div>
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 md:col-span-2"><h3 class="text-sm font-semibold text-slate-400 mb-4">Tagesbilanz-Trend des Monats</h3><div class="h-64"><canvas id="monthlyChart"></canvas></div></div>
+            </div>
+        </section>
 
-                    const imgData = canvas.toDataURL('image/jpeg', 0.9);
-                    if (!imgData || typeof imgData !== 'string' || imgData.length < 100) {
-                        throw new Error(`Fehler: Konnte keine gültigen Bilddaten für Seite ${i + 1} extrahieren.`);
-                    }
+        <!-- JAHR -->
+        <section id="view-year" class="hidden space-y-6">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
+                    <div><h3 class="text-base font-bold text-white">Jahresübersicht</h3><p class="text-xs text-slate-400">Durchschnittliche Kalorienzufuhr pro Monat (letzte 12 Monate).</p></div>
+                    <div class="flex gap-4">
+                        <div class="text-right"><span class="text-[10px] text-slate-500 uppercase font-bold">Jahresdurchschnitt</span><p class="text-lg font-extrabold text-brand-500"><span id="yearAvg">0</span> kcal/Tag</p></div>
+                        <div class="text-right border-l border-slate-800 pl-4"><span class="text-[10px] text-slate-500 uppercase font-bold">Erfasste Tage</span><p class="text-lg font-extrabold text-emerald-400" id="yearDays">0</p></div>
+                    </div>
+                </div>
+                <div class="h-80"><canvas id="yearlyChart"></canvas></div>
+            </div>
+        </section>
+    </main>
 
-                    if (i > 0) {
-                        doc.addPage();
-                    }
-                    const imgWidth = 210; // A4 width in mm
-                    const imgHeight = canvas.height * imgWidth / canvas.width;
+    <nav class="mobile-nav fixed bottom-0 left-0 right-0 bg-slate-900/95 border-t border-slate-800/80 backdrop-blur-lg py-2 px-4 z-40 md:sticky md:bottom-0 md:bg-slate-950/80">
+        <div class="max-w-xl mx-auto flex justify-between items-center text-center">
+            <button onclick="switchView('today')" id="nav-today" class="flex-1 flex flex-col items-center gap-1 py-1.5 text-brand-500 transition-colors"><i class="fa-solid fa-house-chimney text-lg"></i><span class="text-[10px] font-semibold">Heute</span></button>
+            <button onclick="switchView('week')" id="nav-week" class="flex-1 flex flex-col items-center gap-1 py-1.5 text-slate-400 hover:text-slate-200 transition-colors"><i class="fa-solid fa-chart-simple text-lg"></i><span class="text-[10px] font-semibold">Woche</span></button>
+            <button onclick="switchView('month')" id="nav-month" class="flex-1 flex flex-col items-center gap-1 py-1.5 text-slate-400 hover:text-slate-200 transition-colors"><i class="fa-solid fa-calendar-days text-lg"></i><span class="text-[10px] font-semibold">Monat</span></button>
+            <button onclick="switchView('year')" id="nav-year" class="flex-1 flex flex-col items-center gap-1 py-1.5 text-slate-400 hover:text-slate-200 transition-colors"><i class="fa-solid fa-chart-line text-lg"></i><span class="text-[10px] font-semibold">Jahr</span></button>
+        </div>
+    </nav>
+</div>
 
-                    doc.addImage(imgData, 'JPEG', 0, 0, imgWidth, imgHeight);
+<!-- =================================================================
+     MODALS
+================================================================= -->
+<div id="profileModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center z-[55] p-4 overflow-y-auto">
+    <div class="bg-slate-900 border border-slate-800 max-w-md w-full rounded-2xl p-6 space-y-4 my-8">
+        <div class="flex justify-between items-center"><h3 class="font-bold text-white text-base flex items-center gap-2"><i class="fa-solid fa-user-gear text-brand-500"></i> Profil bearbeiten</h3><button onclick="closeProfileModal()" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-xmark"></i></button></div>
+        <div class="space-y-3">
+            <div><label class="text-xs text-slate-400 block mb-1">Name</label><input type="text" id="pf_name" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-brand-500"></div>
+            <div class="grid grid-cols-2 gap-3">
+                <div><label class="text-xs text-slate-400 block mb-1">Geschlecht</label><select id="pf_sex" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-brand-500"><option value="male">Männlich</option><option value="female">Weiblich</option></select></div>
+                <div><label class="text-xs text-slate-400 block mb-1">Alter</label><input type="number" id="pf_age" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-brand-500"></div>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div><label class="text-xs text-slate-400 block mb-1">Grösse (cm)</label><input type="number" id="pf_height" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-brand-500"></div>
+                <div><label class="text-xs text-slate-400 block mb-1">Gewicht (kg)</label><input type="number" step="0.1" id="pf_weight" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-brand-500"></div>
+            </div>
+            <div><label class="text-xs text-slate-400 block mb-1">Aktivität</label><select id="pf_activity" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-brand-500"><option value="sedentary">Wenig aktiv</option><option value="light">Leicht aktiv</option><option value="moderate">Moderat aktiv</option><option value="active">Sehr aktiv</option><option value="veryactive">Extrem aktiv</option></select></div>
+            <div><label class="text-xs text-slate-400 block mb-1">Ziel</label><select id="pf_goal" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-brand-500"><option value="lose">Abnehmen (−500 kcal)</option><option value="maintain">Halten</option><option value="gain">Aufbauen (+350 kcal)</option></select></div>
+            <div id="livePreview" class="bg-brand-500/10 border border-brand-500/20 rounded-xl p-3 text-xs text-slate-300 hidden">Neues Tageslimit: <strong id="previewTarget" class="text-brand-400">–</strong> kcal/Tag</div>
+        </div>
+        <div class="flex justify-end gap-2.5"><button onclick="closeProfileModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs px-4 py-2 rounded-xl">Abbrechen</button><button onclick="saveProfile()" class="bg-brand-500 hover:bg-brand-600 text-white font-semibold text-xs px-4 py-2 rounded-xl">Speichern</button></div>
+    </div>
+</div>
 
-                    // Cleanup: Remove the page container from pdfContent after rendering
-                    pdfContent.removeChild(pageContainer);
-                }
+<div id="settingsBanner" class="fixed bottom-20 right-4 left-4 md:left-auto md:w-96 bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-2xl z-50 transform translate-y-32 opacity-0 transition-all duration-300 pointer-events-none">
+    <div class="flex justify-between items-start mb-2"><h4 class="font-bold text-xs text-white uppercase tracking-wider flex items-center gap-1.5"><i class="fa-solid fa-key text-amber-400"></i> Gemini API-Schlüssel</h4><button onclick="toggleSettings(false)" class="text-slate-400 hover:text-slate-200 text-xs"><i class="fa-solid fa-xmark"></i></button></div>
+    <p class="text-[11px] text-slate-400 mb-3 leading-normal">Für echte Foto-Analyse: kostenlosen Key auf aistudio.google.com holen. Wird in deinem Konto gespeichert und auf allen Geräten genutzt. Ohne Key wird simuliert.</p>
+    <div class="flex gap-2"><input type="password" id="geminiApiKeyInput" placeholder="AIzaSy..." class="flex-1 bg-slate-950 border border-slate-800 rounded-lg text-xs px-2.5 py-1.5 text-slate-100 focus:outline-none focus:border-brand-500"><button onclick="saveApiKey()" class="bg-brand-500 hover:bg-brand-600 text-white font-semibold text-xs px-3 py-1.5 rounded-lg">Sichern</button></div>
+</div>
+<button id="settingsFab" onclick="toggleSettings(true)" class="fixed bottom-24 right-4 md:bottom-6 md:right-6 w-11 h-11 rounded-full bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white flex items-center justify-center border border-slate-700 shadow-xl transition-all hover:rotate-45 z-40 hidden"><i class="fa-solid fa-gear"></i></button>
 
-                doc.save('Meine-PE-Fabrikation-Aufgaben.pdf');
-                showModal('PDF erfolgreich generiert!');
+<div id="loadingModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center z-[57] p-4">
+    <div class="bg-slate-900 border border-slate-800 max-w-sm w-full rounded-2xl p-6 text-center space-y-4">
+        <div class="relative w-16 h-16 mx-auto"><div class="absolute inset-0 rounded-full border-4 border-slate-800"></div><div class="absolute inset-0 rounded-full border-4 border-brand-500 border-t-transparent animate-spin"></div><div class="absolute inset-0 flex items-center justify-center text-brand-400"><i class="fa-solid fa-wand-magic-sparkles text-xl animate-bounce"></i></div></div>
+        <div><h3 class="font-bold text-white text-base">KI analysiert Mahlzeit...</h3><p class="text-xs text-brand-400 mt-1" id="loadingStage">Fotodetails werden extrahiert</p><p class="text-[11px] text-slate-500 mt-2">Das dauert in der Regel 3–5 Sekunden.</p></div>
+    </div>
+</div>
 
-            } catch (error) {
-                console.error('Fehler beim Generieren des PDFs:', error);
-                let displayMessage = 'Es gab ein Problem beim Exportieren der PDF.';
-                if (error instanceof Error && typeof error.message === 'string' && error.message.length > 0) {
-                    displayMessage += ` Details: ${error.message}`;
-                } else if (typeof error === 'string' && error.length > 0) {
-                    displayMessage += ` Details: ${error}`;
-                } else {
-                    displayMessage += ' Ein unbekannter Fehler ist aufgetreten.';
-                }
-                showModal(displayMessage + ' Bitte versuchen Sie es erneut.');
-            } finally {
-                // pdfContent wieder verstecken, unabhängig davon, ob ein Fehler aufgetreten ist
-                pdfContent.style.cssText = 'display: none;';
-            }
+<div id="textAddModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center z-[55] p-4">
+    <div class="bg-slate-900 border border-slate-800 max-w-md w-full rounded-2xl p-6 space-y-4">
+        <div class="flex justify-between items-center"><h3 class="font-bold text-white text-base flex items-center gap-2"><i class="fa-solid fa-feather-pointed text-brand-500"></i> Mahlzeit beschreiben</h3><button onclick="closeTextAddModal()" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-xmark"></i></button></div>
+        <textarea id="textMealInput" rows="3" placeholder="z.B. Ein Teller Spaghetti Bolognese mit Parmesan und Salat" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-slate-200 focus:outline-none focus:border-brand-500 resize-none"></textarea>
+        <div class="flex justify-end gap-2.5"><button onclick="closeTextAddModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs px-4 py-2 rounded-xl">Abbrechen</button><button onclick="submitTextMeal()" class="bg-brand-500 hover:bg-brand-600 text-white font-semibold text-xs px-4 py-2 rounded-xl">Analysieren</button></div>
+    </div>
+</div>
+
+<div id="customToast" class="fixed top-4 left-1/2 transform -translate-x-1/2 bg-slate-900 border border-slate-800 shadow-2xl rounded-xl px-4 py-3 flex items-center gap-2.5 z-[59] pointer-events-none opacity-0 transition-all duration-300 translate-y-[-20px]">
+    <div id="toastIcon" class="w-6 h-6 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400"><i class="fa-solid fa-circle-check"></i></div>
+    <span class="text-xs font-semibold text-slate-200" id="toastMessage">OK</span>
+</div>
+
+<script>
+/* ============================================================
+   ▼▼▼ HIER DEINE FIREBASE-CONFIG EINTRAGEN ▼▼▼
+   Firebase Console → Projekt-Einstellungen → Allgemein →
+   "Deine Apps" → Web-App → SDK-Konfiguration
+============================================================ */
+const firebaseConfig = {
+    apiKey: "AIzaSyD-bBYwWt0QMs2WD62VcKG-gvHM7k8oeAg",
+    authDomain: "kalorien-35bc9.firebaseapp.com",
+    projectId: "kalorien-35bc9",
+    storageBucket: "kalorien-35bc9.firebasestorage.app",
+    messagingSenderId: "916001750321",
+    appId: "1:916001750321:web:ad42473d921e75354e8410"
+};
+/* ============================================================ */
+
+const GEMINI_MODEL = "gemini-2.5-flash"; // vision-fähig; Alternative: "gemini-3.5-flash"
+const ACTIVITY_FACTORS = { sedentary:1.2, light:1.375, moderate:1.55, active:1.725, veryactive:1.9 };
+const GOAL_LABEL = { lose:"Abnehmen", maintain:"Halten", gain:"Aufbauen" };
+
+let db, currentUser=null, profile=null;
+const SESSION_KEY='nutritrack_user';
+const GKEY='gemini_api_key';
+let todayDoc=null, currentDayKey=null, historyCache=[];
+let unsubProfile=null, unsubToday=null;
+let chartsReady=false, weeklyChart, monthlyChart, yearlyChart;
+let authMode="login";
+
+const $ = id => document.getElementById(id);
+function isoOf(d){ const x=new Date(d); x.setMinutes(x.getMinutes()-x.getTimezoneOffset()); return x.toISOString().split('T')[0]; }
+function todayISO(){ return isoOf(new Date()); }
+function blankDay(date){ return { date, calories:0, carbs:0, protein:0, fat:0, water:0, meals:[] }; }
+
+/* ---------- Screens ---------- */
+function showScreen(name){
+    ['authScreen','setupScreen','app'].forEach(s=>{
+        const el=$(s); const on=(s===name);
+        el.classList.toggle('hidden', !on);
+        el.classList.toggle('flex', on && s!=='app');
+    });
+    $('settingsFab').classList.toggle('hidden', name!=='app');
+}
+
+/* ============================================================
+   FIREBASE INIT
+============================================================ */
+function configValid(){ return firebaseConfig.apiKey && !firebaseConfig.apiKey.includes('DEIN_'); }
+
+window.addEventListener('DOMContentLoaded', ()=>{
+    updateTime(); setInterval(updateTime,1000);
+
+    if(!configValid()){
+        showScreen('authScreen');
+        $('configWarning').classList.remove('hidden');
+        return;
+    }
+    try{
+        firebase.initializeApp(firebaseConfig);
+        db = firebase.firestore();
+        db.enablePersistence({synchronizeTabs:true}).catch(()=>{}); // Offline-Cache
+    }catch(e){
+        showScreen('authScreen');
+        $('configWarning').classList.remove('hidden');
+        $('configWarning').innerHTML = "<strong>Firebase-Fehler:</strong> "+e.message;
+        return;
+    }
+
+    // Session wiederherstellen (eingeloggt bleiben)
+    const saved = localStorage.getItem(SESSION_KEY);
+    if(saved){ currentUser = saved; startListeners(); }
+    else { showScreen('authScreen'); }
+
+    // Tageswechsel-Check
+    setInterval(()=>{ if(currentUser && todayISO()!==currentDayKey) attachTodayListener(); }, 30000);
+    document.addEventListener('visibilitychange', ()=>{ if(!document.hidden && currentUser && todayISO()!==currentDayKey) attachTodayListener(); });
+});
+
+function handleAuthChange(){ /* ersetzt durch Benutzername/PIN-System */ }
+
+/* ============================================================
+   AUTH – Benutzername + PIN (via Firestore, kein E-Mail/Passwort)
+============================================================ */
+function normUser(u){ return (u||'').trim().toLowerCase().replace(/\s+/g,''); }
+function hashPin(user, pin){ const s=user+'|'+pin; let h=0; for(let i=0;i<s.length;i++){ h=((h<<5)-h+s.charCodeAt(i))|0; } return 'h'+(h>>>0); }
+function accountRef(u){ return db.collection('accounts').doc(u); }
+
+function toggleAuthMode(){
+    authMode = (authMode==='login') ? 'register' : 'login';
+    const isLogin = authMode==='login';
+    $('authSubmitBtn').innerText = isLogin ? 'Anmelden' : 'Konto erstellen';
+    $('authToggleText').innerText = isLogin ? 'Noch kein Konto?' : 'Schon ein Konto?';
+    $('authToggleBtn').innerText = isLogin ? 'Registrieren' : 'Anmelden';
+    $('authError').classList.add('hidden');
+}
+function authErr(msg){ const e=$('authError'); e.innerText=msg; e.classList.remove('hidden'); }
+
+async function doAuth(){
+    const raw=$('auth_user').value.trim(), pin=$('auth_pin').value.trim();
+    const u=normUser(raw);
+    if(!u){ authErr("Bitte Benutzernamen eingeben."); return; }
+    if(!/^\d{4}$/.test(pin)){ authErr("PIN muss aus genau 4 Ziffern bestehen."); return; }
+    $('authError').classList.add('hidden');
+    try{
+        const doc=await accountRef(u).get();
+        if(authMode==='register'){
+            if(doc.exists){ authErr("Benutzername bereits vergeben."); return; }
+            await accountRef(u).set({ username: raw, pinHash: hashPin(u,pin), createdAt: Date.now() });
+            loginSuccess(u);
+        } else {
+            if(!doc.exists){ authErr("Benutzer nicht gefunden."); return; }
+            if(doc.data().pinHash !== hashPin(u,pin)){ authErr("Falscher PIN."); return; }
+            loginSuccess(u);
+        }
+    }catch(e){ authErr("Verbindungsfehler: "+(e.code||e.message)); }
+}
+
+function loginSuccess(u){
+    currentUser=u;
+    localStorage.setItem(SESSION_KEY, u);
+    $('auth_pin').value='';
+    startListeners();
+}
+
+function logout(){
+    localStorage.removeItem(SESSION_KEY);
+    if(unsubProfile){ unsubProfile(); unsubProfile=null; }
+    if(unsubToday){ unsubToday(); unsubToday=null; }
+    currentUser=null; profile=null; todayDoc=null;
+    showScreen('authScreen');
+}
+
+/* ============================================================
+   FIRESTORE REFS & LISTENERS
+============================================================ */
+function userRef(){ return db.collection('users').doc(currentUser); }
+function dayRef(key){ return userRef().collection('days').doc(key); }
+
+function startListeners(){
+    unsubProfile = userRef().onSnapshot(snap=>{
+        profile = snap.exists ? snap.data() : null;
+        if(!profile || !profile.targets){
+            prefillSetup();
+            showScreen('setupScreen');
+        } else {
+            if($('app').classList.contains('hidden')){ showScreen('app'); switchView('today'); }
+            $('geminiApiKeyInput').value = localStorage.getItem(GKEY) || "";
+            renderProfileHeader();
+            updateDashboard();
+        }
+    }, err=>{ showToast("Sync-Fehler: "+err.code, true); });
+
+    attachTodayListener();
+}
+
+function attachTodayListener(){
+    if(!currentUser) return;
+    if(unsubToday) unsubToday();
+    currentDayKey = todayISO();
+    unsubToday = dayRef(currentDayKey).onSnapshot(snap=>{
+        todayDoc = snap.exists ? snap.data() : blankDay(currentDayKey);
+        if(!todayDoc.meals) todayDoc.meals=[];
+        if(profile && profile.targets) updateDashboard();
+    }, err=>{ /* offline ok */ });
+}
+
+/* ============================================================
+   BMR / ZIELE
+============================================================ */
+function calcTargets(p){
+    const w=Number(p.weightKg), h=Number(p.heightCm), a=Number(p.age);
+    let bmr = 10*w + 6.25*h - 5*a + (p.sex==='male' ? 5 : -161);
+    const tdee = bmr * (ACTIVITY_FACTORS[p.activity] || 1.375);
+    let cal = tdee;
+    if(p.goal==='lose') cal = tdee - 500; else if(p.goal==='gain') cal = tdee + 350;
+    cal = Math.round(cal);
+    const floor = p.sex==='male' ? 1500 : 1200;
+    let floored=false; if(cal<floor){ cal=floor; floored=true; }
+    return {
+        calories: cal,
+        protein: Math.round(cal*0.30/4),
+        carbs: Math.round(cal*0.40/4),
+        fat: Math.round(cal*0.30/9),
+        water: Math.round((w*35)/250)*250,
+        bmr: Math.round(bmr), tdee: Math.round(tdee), floored
+    };
+}
+
+/* ============================================================
+   SETUP (erstes Profil)
+============================================================ */
+function prefillSetup(){
+    if(currentUser && !$('su_name').value){
+        $('su_name').value = currentUser.charAt(0).toUpperCase()+currentUser.slice(1);
+    }
+}
+async function saveSetup(){
+    const name=$('su_name').value.trim();
+    if(!name || !$('su_age').value || !$('su_height').value || !$('su_weight').value){ showToast("Bitte alle Felder ausfüllen.", true); return; }
+    const p = {
+        name, sex:$('su_sex').value, age:Number($('su_age').value),
+        heightCm:Number($('su_height').value), weightKg:Number($('su_weight').value),
+        activity:$('su_activity').value, goal:$('su_goal').value
+    };
+    p.targets = calcTargets(p);
+    try{ await userRef().set(p, {merge:true}); showToast("Profil gespeichert! Limit: "+p.targets.calories+" kcal."); }
+    catch(e){ showToast("Speichern fehlgeschlagen.", true); }
+}
+
+/* ============================================================
+   PROFIL BEARBEITEN
+============================================================ */
+function openProfileModal(){
+    if(!profile) return;
+    $('pf_name').value=profile.name; $('pf_sex').value=profile.sex; $('pf_age').value=profile.age;
+    $('pf_height').value=profile.heightCm; $('pf_weight').value=profile.weightKg;
+    $('pf_activity').value=profile.activity; $('pf_goal').value=profile.goal;
+    updateLivePreview();
+    const m=$('profileModal'); m.classList.remove('hidden'); m.classList.add('flex');
+}
+function closeProfileModal(){ const m=$('profileModal'); m.classList.add('hidden'); m.classList.remove('flex'); }
+function updateLivePreview(){
+    if($('pf_age').value && $('pf_height').value && $('pf_weight').value){
+        const t=calcTargets({ sex:$('pf_sex').value, age:Number($('pf_age').value), heightCm:Number($('pf_height').value), weightKg:Number($('pf_weight').value), activity:$('pf_activity').value, goal:$('pf_goal').value });
+        $('previewTarget').innerText=t.calories; $('livePreview').classList.remove('hidden');
+    } else $('livePreview').classList.add('hidden');
+}
+['pf_sex','pf_age','pf_height','pf_weight','pf_activity','pf_goal'].forEach(id=>{
+    document.addEventListener('input', e=>{ if(e.target && e.target.id===id) updateLivePreview(); });
+});
+async function saveProfile(){
+    const name=$('pf_name').value.trim();
+    if(!name || !$('pf_age').value || !$('pf_height').value || !$('pf_weight').value){ showToast("Bitte alle Felder ausfüllen.", true); return; }
+    const upd = {
+        name, sex:$('pf_sex').value, age:Number($('pf_age').value),
+        heightCm:Number($('pf_height').value), weightKg:Number($('pf_weight').value),
+        activity:$('pf_activity').value, goal:$('pf_goal').value
+    };
+    upd.targets = calcTargets(upd);
+    try{ await userRef().set(upd, {merge:true}); closeProfileModal(); showToast("Profil aktualisiert. Limit: "+upd.targets.calories+" kcal."); }
+    catch(e){ showToast("Speichern fehlgeschlagen.", true); }
+}
+
+/* ============================================================
+   MAHLZEITEN (Firestore-Tagesdokument)
+============================================================ */
+async function writeToday(){
+    todayDoc.date = currentDayKey;
+    try{ await dayRef(currentDayKey).set(todayDoc); }
+    catch(e){ showToast("Speichern fehlgeschlagen.", true); }
+}
+function addMealToLog(meal){
+    if(!todayDoc) todayDoc=blankDay(currentDayKey);
+    if(!todayDoc.meals) todayDoc.meals=[];
+    const item={
+        id: Date.now(),
+        time: new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'}),
+        name: meal.name||"Mahlzeit", explanation: meal.explanation||"",
+        calories: Math.max(0,Math.round(Number(meal.calories)||0)),
+        protein: Math.max(0,Math.round(Number(meal.protein)||0)),
+        carbs: Math.max(0,Math.round(Number(meal.carbs)||0)),
+        fat: Math.max(0,Math.round(Number(meal.fat)||0))
+    };
+    todayDoc.meals.push(item);
+    todayDoc.calories=(todayDoc.calories||0)+item.calories;
+    todayDoc.carbs=(todayDoc.carbs||0)+item.carbs;
+    todayDoc.protein=(todayDoc.protein||0)+item.protein;
+    todayDoc.fat=(todayDoc.fat||0)+item.fat;
+    updateDashboard(); writeToday();
+}
+function deleteMeal(mealId){
+    const i=todayDoc.meals.findIndex(m=>m.id===mealId);
+    if(i!==-1){
+        const d=todayDoc.meals[i];
+        todayDoc.calories-=d.calories; todayDoc.carbs-=d.carbs; todayDoc.protein-=d.protein; todayDoc.fat-=d.fat;
+        todayDoc.meals.splice(i,1);
+        updateDashboard(); writeToday(); showToast("Eintrag gelöscht.");
+    }
+}
+function adjustWater(amount){
+    if(!todayDoc) todayDoc=blankDay(currentDayKey);
+    todayDoc.water=Math.max(0,(todayDoc.water||0)+amount);
+    $('waterCount').innerText=`${todayDoc.water} ml`;
+    writeToday(); showToast(`${amount>0?'+':''}${amount} ml Wasser erfasst.`);
+}
+
+/* ============================================================
+   DASHBOARD
+============================================================ */
+function renderProfileHeader(){ if(profile) $('hdrName').innerText=profile.name; }
+
+function updateDashboard(){
+    if(!profile || !profile.targets) return;
+    const t=profile.targets, day=todayDoc||blankDay(currentDayKey);
+    $('ringProfileName').innerText=profile.name;
+    $('todayCaloriesEaten').innerText=day.calories||0;
+    $('todayCalorieTarget').innerText=t.calories;
+    const remaining=t.calories-(day.calories||0);
+    $('todayCalorieRemaining').innerText = remaining>=0 ? `${remaining} kcal` : `Limit überschritten um ${Math.abs(remaining)} kcal`;
+
+    const circle=$('calorieProgressCircle'), maxOffset=314.16;
+    const pct=Math.min(100,((day.calories||0)/t.calories)*100);
+    circle.style.strokeDashoffset=maxOffset-(pct/100)*maxOffset;
+    circle.setAttribute('stroke', remaining<0?'#ef4444':'#22c55e');
+
+    $('macroCarbs').innerText=day.carbs||0; $('macroCarbsTarget').innerText=t.carbs;
+    $('macroCarbsBar').style.width=`${Math.min(100,((day.carbs||0)/t.carbs)*100)}%`;
+    $('macroProtein').innerText=day.protein||0; $('macroProteinTarget').innerText=t.protein;
+    $('macroProteinBar').style.width=`${Math.min(100,((day.protein||0)/t.protein)*100)}%`;
+    $('macroFat').innerText=day.fat||0; $('macroFatTarget').innerText=t.fat;
+    $('macroFatBar').style.width=`${Math.min(100,((day.fat||0)/t.fat)*100)}%`;
+
+    $('waterCount').innerText=`${day.water||0} ml`;
+    $('waterTargetHint').innerText = t.water ? `(Ziel ${(t.water/1000).toFixed(1)} L)` : '';
+
+    $('targetInfoBox').classList.remove('hidden');
+    $('infoBmr').innerText=t.bmr; $('infoTdee').innerText=t.tdee;
+    $('infoGoal').innerText=GOAL_LABEL[profile.goal]; $('infoTarget').innerText=t.calories;
+    $('floorWarning').classList.toggle('hidden', !t.floored);
+
+    const container=$('mealsListContainer'), placeholder=$('noMealsPlaceholder');
+    container.querySelectorAll('.meal-item-card').forEach(el=>el.remove());
+    const meals=day.meals||[];
+    if(meals.length===0){ placeholder.classList.remove('hidden'); $('todayMealsCount').innerText="0 Mahlzeiten"; }
+    else {
+        placeholder.classList.add('hidden');
+        $('todayMealsCount').innerText=`${meals.length} Mahlzeit${meals.length>1?'en':''}`;
+        meals.forEach(meal=>{
+            const card=document.createElement('div');
+            card.className="meal-item-card bg-slate-950 border border-slate-800 p-4 rounded-xl flex justify-between items-center gap-4 hover:border-slate-700 transition-colors";
+            const left=document.createElement('div'); left.className="flex-1 min-w-0";
+            left.innerHTML=`<div class="flex items-center gap-2 mb-1"><span class="mtime text-[10px] text-slate-500 font-medium"></span><h4 class="mname font-bold text-slate-100 text-sm truncate"></h4></div>
+                <p class="mexp text-xs text-slate-400 leading-tight line-clamp-1 mb-2"></p>
+                <div class="flex flex-wrap gap-2 text-[10px]">
+                    <span class="bg-amber-500/10 text-amber-400 px-2 py-0.5 rounded-md border border-amber-500/10">K: ${meal.carbs}g</span>
+                    <span class="bg-red-500/10 text-red-400 px-2 py-0.5 rounded-md border border-red-500/10">P: ${meal.protein}g</span>
+                    <span class="bg-sky-500/10 text-sky-400 px-2 py-0.5 rounded-md border border-sky-500/10">F: ${meal.fat}g</span></div>`;
+            left.querySelector('.mtime').textContent=meal.time+' Uhr';
+            left.querySelector('.mname').textContent=meal.name;
+            left.querySelector('.mexp').textContent=meal.explanation;
+            const right=document.createElement('div'); right.className="flex items-center gap-3";
+            right.innerHTML=`<div class="text-right"><span class="block text-sm font-extrabold text-brand-500 leading-none">${meal.calories}</span><span class="text-[9px] text-slate-500 uppercase font-bold tracking-wider">kcal</span></div>`;
+            const del=document.createElement('button');
+            del.className="text-slate-500 hover:text-red-400 w-8 h-8 rounded-lg hover:bg-red-500/10 flex items-center justify-center transition-colors";
+            del.innerHTML='<i class="fa-solid fa-trash-can text-xs"></i>';
+            del.addEventListener('click', ()=>deleteMeal(meal.id));
+            right.appendChild(del);
+            card.appendChild(left); card.appendChild(right); container.appendChild(card);
         });
+    }
+}
 
-        // Initiales Rendern beim Laden der Seite
-        renderEntries();
-    </script>
+/* ============================================================
+   HISTORY & CHARTS
+============================================================ */
+async function loadHistory(){
+    try{
+        const snap=await userRef().collection('days').orderBy('date','desc').limit(400).get();
+        historyCache=snap.docs.map(d=>d.data());
+    }catch(e){ /* offline -> behalte cache */ }
+}
+function buildDayMap(){
+    const m={};
+    (historyCache||[]).forEach(d=>{ if(d&&d.date) m[d.date]=d; });
+    if(todayDoc&&todayDoc.date) m[todayDoc.date]=todayDoc;
+    return m;
+}
+function lastNDays(n){
+    const m=buildDayMap(), out=[];
+    for(let i=n-1;i>=0;i--){ const d=new Date(); d.setDate(d.getDate()-i); const iso=isoOf(d); const v=m[iso];
+        out.push({date:iso,dateObj:d,...(v||{calories:0,carbs:0,protein:0,fat:0,water:0})}); }
+    return out;
+}
+function ensureCharts(){
+    if(chartsReady) return;
+    const baseOpts={responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{grid:{color:'#1e293b'},ticks:{color:'#94a3b8'}},x:{grid:{display:false},ticks:{color:'#94a3b8'}}}};
+    weeklyChart=new Chart($('weeklyChart'),{type:'bar',data:{labels:[],datasets:[{data:[],backgroundColor:'#22c55e',borderRadius:6}]},options:baseOpts});
+    monthlyChart=new Chart($('monthlyChart'),{type:'line',data:{labels:[],datasets:[{data:[],borderColor:'#10b981',borderWidth:2,pointRadius:2,fill:true,backgroundColor:'rgba(16,185,129,0.05)',tension:0.3}]},options:baseOpts});
+    yearlyChart=new Chart($('yearlyChart'),{type:'line',data:{labels:[],datasets:[{data:[],borderColor:'#22c55e',borderWidth:3,tension:0.2}]},options:baseOpts});
+    chartsReady=true;
+}
+function updateCharts(){
+    if(!profile||!profile.targets) return;
+    ensureCharts();
+    const dayShort=['So','Mo','Di','Mi','Do','Fr','Sa'];
+
+    const week=lastNDays(7);
+    weeklyChart.data.labels=week.map(d=>dayShort[d.dateObj.getDay()]);
+    weeklyChart.data.datasets[0].data=week.map(d=>d.calories||0);
+    weeklyChart.update();
+    const wWith=week.filter(d=>d.calories>0);
+    const avgW=wWith.length?Math.round(wWith.reduce((a,b)=>a+b.calories,0)/wWith.length):0;
+    $('weekAvgCalories').innerText=avgW.toLocaleString('de-CH');
+    $('weekTargetHit').innerText=`${wWith.filter(d=>d.calories<=profile.targets.calories).length} / ${wWith.length} Tagen`;
+    if(wWith.length){
+        const low=wWith.reduce((a,b)=>b.calories<a.calories?b:a), high=wWith.reduce((a,b)=>b.calories>a.calories?b:a);
+        $('weekBestDay').innerText=`${dayShort[low.dateObj.getDay()]} (${low.calories} kcal)`;
+        $('weekHighDay').innerText=`${dayShort[high.dateObj.getDay()]} (${high.calories} kcal)`;
+        const diff=profile.targets.calories-avgW;
+        $('weekStatusText').innerText = diff>=0 ? `Im Schnitt ${diff} kcal unter deinem Limit.` : `Im Schnitt ${Math.abs(diff)} kcal über deinem Limit.`;
+    } else { $('weekBestDay').innerText='–'; $('weekHighDay').innerText='–'; $('weekStatusText').innerText='Noch keine Daten für diese Woche.'; }
+
+    const month=lastNDays(30);
+    monthlyChart.data.labels=month.map(d=>`${d.dateObj.getDate()}.`);
+    monthlyChart.data.datasets[0].data=month.map(d=>d.calories||0);
+    monthlyChart.update();
+    const mWith=month.filter(d=>d.calories>0);
+    const avgM=mWith.length?Math.round(mWith.reduce((a,b)=>a+b.calories,0)/mWith.length):0;
+    $('monthAvgCalories').innerText=avgM.toLocaleString('de-CH');
+    $('monthProtein').innerText=month.reduce((a,b)=>a+(b.protein||0),0).toLocaleString('de-CH');
+    $('monthFat').innerText=month.reduce((a,b)=>a+(b.fat||0),0).toLocaleString('de-CH');
+    $('monthWater').innerText=(month.reduce((a,b)=>a+(b.water||0),0)/1000).toFixed(1).replace('.',',');
+    $('monthDays').innerText=mWith.length;
+    if(mWith.length>=3){
+        const diff=profile.targets.tdee-avgM;
+        if(diff>50){ $('monthTrend').innerHTML=`Bei diesem Schnitt rechnerisch ca. <strong class="text-emerald-400">${(diff*30/7700).toFixed(1).replace('.',',')} kg</strong> Abnahme/Monat (Schätzung).`; }
+        else if(diff<-50){ $('monthTrend').innerHTML=`Über deinem Gesamtumsatz – rechnerisch ca. <strong class="text-amber-400">+${(Math.abs(diff)*30/7700).toFixed(1).replace('.',',')} kg</strong>/Monat.`; }
+        else { $('monthTrend').innerText='Ungefähr im Gleichgewicht mit deinem Gesamtumsatz.'; }
+    } else { $('monthTrend').innerText='Sammle ein paar Tage Daten für eine Prognose.'; }
+
+    const monthsShort=['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+    const buckets={}, labels=[], order=[];
+    for(let i=11;i>=0;i--){ const d=new Date(); d.setMonth(d.getMonth()-i); const key=`${d.getFullYear()}-${d.getMonth()}`; buckets[key]={sum:0,count:0}; order.push(key); labels.push(monthsShort[d.getMonth()]); }
+    const map=buildDayMap();
+    Object.values(map).forEach(day=>{ if(!day.date||!day.calories) return; const dd=new Date(day.date); const key=`${dd.getFullYear()}-${dd.getMonth()}`; if(buckets[key]){ buckets[key].sum+=day.calories; buckets[key].count++; } });
+    const yearData=order.map(k=>buckets[k].count?Math.round(buckets[k].sum/buckets[k].count):0);
+    yearlyChart.data.labels=labels; yearlyChart.data.datasets[0].data=yearData; yearlyChart.update();
+    const yWith=yearData.filter(v=>v>0);
+    $('yearAvg').innerText=(yWith.length?Math.round(yWith.reduce((a,b)=>a+b,0)/yWith.length):0).toLocaleString('de-CH');
+    $('yearDays').innerText=Object.values(map).filter(d=>d.date&&d.calories).length;
+}
+
+/* ============================================================
+   KI (Gemini / Simulation)
+============================================================ */
+function geminiKey(){ return localStorage.getItem(GKEY) || ""; }
+function handlePhotoSelected(event){
+    const file=event.target.files[0]; if(!file) return;
+    const reader=new FileReader();
+    reader.onload=e=>analyzeFoodImage(e.target.result.split(',')[1], file.type||'image/jpeg');
+    reader.readAsDataURL(file); event.target.value='';
+}
+function setLoadingState(loading,msg="Lade..."){ const m=$('loadingModal'); if(loading){ $('loadingStage').innerText=msg; m.classList.remove('hidden'); m.classList.add('flex'); } else { m.classList.add('hidden'); m.classList.remove('flex'); } }
+
+async function callGemini(parts){
+    const url=`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${geminiKey()}`;
+    const payload={ contents:[{parts}], generationConfig:{responseMimeType:"application/json"} };
+    let delay=1000;
+    for(let attempt=0; attempt<4; attempt++){
+        try{
+            const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+            if(r.status===429||r.status>=500) throw new Error("retry");
+            if(!r.ok) throw new Error("API "+r.status);
+            const result=await r.json();
+            const txt=result.candidates?.[0]?.content?.parts?.[0]?.text;
+            if(!txt) throw new Error("leere Antwort");
+            return JSON.parse(txt.replace(/```json|```/g,'').trim());
+        }catch(err){ if(attempt===3) throw err; await new Promise(res=>setTimeout(res,delay)); delay*=2; }
+    }
+}
+const PROMPT_BASE='Antworte AUSSCHLIESSLICH mit JSON, keine Markdown-Backticks. Schätze Kalorien (kcal), Protein (g), Kohlenhydrate (g), Fett (g) für eine normale Portion. Struktur exakt: {"name":"kurzer Name","calories":0,"protein":0,"carbs":0,"fat":0,"explanation":"max 1 kurzer Satz"}.';
+
+async function analyzeFoodImage(base64,mime){
+    setLoadingState(true,"KI analysiert das Essensfoto...");
+    if(!geminiKey()){
+        setTimeout(()=>{
+            const sims=[
+                {name:"Gegrilltes Hühnchen mit Reis & Brokkoli",calories:580,protein:42,carbs:65,fat:8,explanation:"Ausgewogene proteinreiche Mahlzeit."},
+                {name:"Avocado-Vollkorn-Toast mit Spiegelei",calories:420,protein:18,carbs:32,fat:22,explanation:"Reich an gesunden Fetten."},
+                {name:"Beeren-Smoothie mit Proteinpulver",calories:290,protein:26,carbs:38,fat:3,explanation:"Guter Post-Workout-Snack."}
+            ];
+            addMealToLog(sims[Math.floor(Math.random()*sims.length)]); setLoadingState(false);
+            showToast("Simulation: Foto analysiert (kein API-Key).");
+        },2200); return;
+    }
+    try{ const meal=await callGemini([{text:PROMPT_BASE},{inlineData:{mimeType:mime,data:base64}}]); addMealToLog(meal); setLoadingState(false); showToast("KI: Mahlzeit per Foto erkannt!"); }
+    catch(e){ setLoadingState(false); showToast("KI-Analyse fehlgeschlagen ("+e.message+").", true); }
+}
+function openTextAddModal(){ $('textAddModal').classList.remove('hidden'); $('textAddModal').classList.add('flex'); }
+function closeTextAddModal(){ $('textAddModal').classList.add('hidden'); $('textAddModal').classList.remove('flex'); }
+async function submitTextMeal(){
+    const text=$('textMealInput').value.trim(); if(!text) return;
+    closeTextAddModal(); setLoadingState(true,"KI berechnet Nährwerte...");
+    if(!geminiKey()){
+        setTimeout(()=>{
+            addMealToLog({ name:text.substring(0,40)+(text.length>40?"...":""), calories:Math.floor(Math.random()*400)+250, protein:Math.floor(Math.random()*20)+10, carbs:Math.floor(Math.random()*50)+20, fat:Math.floor(Math.random()*15)+5, explanation:"Simulierte Berechnung (kein API-Key)." });
+            setLoadingState(false); $('textMealInput').value=""; showToast("Simulation: Text verarbeitet.");
+        },1800); return;
+    }
+    try{ const meal=await callGemini([{text:`${PROMPT_BASE} Beschreibung: "${text}"`}]); addMealToLog(meal); setLoadingState(false); $('textMealInput').value=""; showToast("KI: Beschreibung ausgewertet!"); }
+    catch(e){ setLoadingState(false); showToast("KI-Textanalyse fehlgeschlagen ("+e.message+").", true); }
+}
+
+/* ============================================================
+   SETTINGS (Gemini Key -> Firestore)
+============================================================ */
+function toggleSettings(show){ const b=$('settingsBanner'); if(show) b.classList.remove('pointer-events-none','translate-y-32','opacity-0'); else b.classList.add('pointer-events-none','translate-y-32','opacity-0'); }
+async function saveApiKey(){
+    const v=$('geminiApiKeyInput').value.trim();
+    localStorage.setItem(GKEY, v);
+    showToast(v?"Gemini-Key gespeichert – echte KI aktiv!":"Key entfernt – Simulation aktiv.");
+    toggleSettings(false);
+}
+
+/* ============================================================
+   VIEW SWITCH / TOAST / UHR
+============================================================ */
+function switchView(viewName){
+    ['today','week','month','year'].forEach(v=>{
+        const el=$(`view-${v}`), nav=$(`nav-${v}`);
+        if(v===viewName){ el.classList.remove('hidden'); nav.className="flex-1 flex flex-col items-center gap-1 py-1.5 text-brand-500 transition-colors"; }
+        else { el.classList.add('hidden'); nav.className="flex-1 flex flex-col items-center gap-1 py-1.5 text-slate-400 hover:text-slate-200 transition-colors"; }
+    });
+    if(viewName!=='today'){ ensureCharts(); loadHistory().then(updateCharts); }
+}
+function showToast(message,isError=false){
+    const toast=$('customToast'),icon=$('toastIcon');
+    $('toastMessage').innerText=message;
+    if(isError){ icon.className="w-6 h-6 rounded-lg bg-red-500/10 flex items-center justify-center text-red-400"; icon.innerHTML='<i class="fa-solid fa-circle-exclamation"></i>'; }
+    else { icon.className="w-6 h-6 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400"; icon.innerHTML='<i class="fa-solid fa-circle-check"></i>'; }
+    toast.style.opacity="1"; toast.style.transform="translate(-50%,0px)";
+    setTimeout(()=>{ toast.style.opacity="0"; toast.style.transform="translate(-50%,-20px)"; },3000);
+}
+function updateTime(){
+    const days=['Sonntag','Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag'];
+    const months=['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+    const now=new Date();
+    if($('currentDateDisplay')) $('currentDateDisplay').innerText=`${days[now.getDay()]}, ${now.getDate()}. ${months[now.getMonth()]}`;
+    if($('currentTimeDisplay')) $('currentTimeDisplay').innerText=now.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})+' Uhr';
+}
+</script>
 </body>
 </html>
