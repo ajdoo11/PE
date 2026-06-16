@@ -324,6 +324,27 @@ nav.mobile-nav{padding-bottom:calc(0.5rem + env(safe-area-inset-bottom))}
     </div>
 </div>
 
+<div id="portionModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm hidden items-center justify-center z-[56] p-4">
+    <div class="bg-slate-900 border border-slate-800 max-w-md w-full rounded-2xl p-6 space-y-4">
+        <div class="flex justify-between items-center">
+            <h3 class="font-bold text-white text-base flex items-center gap-2"><i class="fa-solid fa-scale-balanced text-brand-500"></i> Wie viel isst du?</h3>
+            <button onclick="cancelPortion()" class="text-slate-400 hover:text-slate-200"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <p class="text-xs text-slate-400 leading-relaxed">Optional. Zeigt das Foto z.B. eine ganze Packung oder mehrere Stücke, gib hier an, wie viel du wirklich isst – die KI rechnet dann genau dafür. Leer lassen = ganze sichtbare Portion.</p>
+        <div class="flex flex-wrap gap-2">
+            <button onclick="setPortion('1 Portion')" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 px-3 py-1.5 rounded-lg active:scale-95 transition-transform">1 Portion</button>
+            <button onclick="setPortion('2 Stück')" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 px-3 py-1.5 rounded-lg active:scale-95 transition-transform">2 Stück</button>
+            <button onclick="setPortion('halbe Portion')" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 px-3 py-1.5 rounded-lg active:scale-95 transition-transform">½ Portion</button>
+            <button onclick="setPortion('100 g')" class="text-xs bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 px-3 py-1.5 rounded-lg active:scale-95 transition-transform">100 g</button>
+        </div>
+        <input type="text" id="portionInput" placeholder="z.B. 2 Stück, 150 g, halbe Portion" onkeydown="if(event.key==='Enter'){event.preventDefault();confirmPortion();}" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-brand-500">
+        <div class="flex justify-end gap-2.5">
+            <button onclick="cancelPortion()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs px-4 py-2 rounded-xl">Abbrechen</button>
+            <button onclick="confirmPortion()" class="bg-brand-500 hover:bg-brand-600 text-white font-semibold text-xs px-4 py-2 rounded-xl">Analysieren</button>
+        </div>
+    </div>
+</div>
+
 <div id="customToast" class="fixed top-4 left-1/2 transform -translate-x-1/2 bg-slate-900 border border-slate-800 shadow-2xl rounded-xl px-4 py-3 flex items-center gap-2.5 z-[59] pointer-events-none opacity-0 transition-all duration-300 translate-y-[-20px]">
     <div id="toastIcon" class="w-6 h-6 rounded-lg bg-emerald-500/10 flex items-center justify-center text-emerald-400"><i class="fa-solid fa-circle-check"></i></div>
     <span class="text-xs font-semibold text-slate-200" id="toastMessage">OK</span>
@@ -777,10 +798,20 @@ function requireKey(){
 }
 
 // Foto verkleinern (Handy-Fotos sind zu gross für schnelle Analyse)
+let pendingPhoto=null;
 function handlePhotoSelected(event){
     const file=event.target.files[0]; event.target.value=''; if(!file) return;
     if(!requireKey()) return;
-    resizeImage(file, 1024, 0.85, (b64)=>analyzeFoodImage(b64,'image/jpeg'));
+    resizeImage(file, 1024, 0.85, (b64)=>{ pendingPhoto={base64:b64, mime:'image/jpeg'}; openPortionModal(); });
+}
+function openPortionModal(){ $('portionInput').value=''; const m=$('portionModal'); m.classList.remove('hidden'); m.classList.add('flex'); }
+function cancelPortion(){ const m=$('portionModal'); m.classList.add('hidden'); m.classList.remove('flex'); pendingPhoto=null; }
+function setPortion(v){ $('portionInput').value=v; }
+function confirmPortion(){
+    const note=$('portionInput').value.trim();
+    const m=$('portionModal'); m.classList.add('hidden'); m.classList.remove('flex');
+    const p=pendingPhoto; pendingPhoto=null;
+    if(p) analyzeFoodImage(p.base64, p.mime, note);
 }
 
 function setLoadingState(loading,msg="Lade..."){ const m=$('loadingModal'); if(loading){ $('loadingStage').innerText=msg; m.classList.remove('hidden'); m.classList.add('flex'); } else { m.classList.add('hidden'); m.classList.remove('flex'); } }
@@ -806,11 +837,15 @@ async function callGemini(parts){
 
 const AI_SYS='Du bist ein präziser Ernährungsexperte. Antworte AUSSCHLIESSLICH mit gültigem JSON (kein Markdown, kein Text davor/danach). Schätze realistische Werte für die sichtbare bzw. beschriebene Portion. Erkenne auch internationale und Balkan-Gerichte (z.B. Ćevapčići, Pljeskavica, Burek, Sarma, Japrak, Spaghetti mit Tomatensauce). Wenn du unsicher bist, nimm die wahrscheinlichste Annahme und verweigere NIEMALS. Der "name" MUSS auf Deutsch sein und das Gericht konkret benennen. Format exakt: {"name":"konkretes Gericht","calories":Zahl,"protein":Zahl,"carbs":Zahl,"fat":Zahl,"explanation":"max 1 kurzer Satz"}';
 
-async function analyzeFoodImage(base64,mime){
+async function analyzeFoodImage(base64,mime,note){
     if(!requireKey()) return;
     setLoadingState(true,"KI erkennt das Essen auf dem Foto...");
+    let instr='Analysiere dieses Foto einer Mahlzeit/eines Getränks.';
+    if(note && note.trim()){
+        instr += ` WICHTIG: Der Nutzer isst NICHT unbedingt die ganze abgebildete bzw. verpackte Menge. Tatsächlich gegessene Menge: "${note.trim()}". Berechne Kalorien und Makros EXAKT für genau diese Menge und gib sie im Namen mit an (z.B. "2× Hamburger" oder "50 g Salzstangen").`;
+    }
     try{
-        const meal=await callGemini([{text:AI_SYS+' Analysiere dieses Foto einer Mahlzeit/eines Getränks.'},{inlineData:{mimeType:mime,data:base64}}]);
+        const meal=await callGemini([{text:AI_SYS+' '+instr},{inlineData:{mimeType:mime,data:base64}}]);
         addMealToLog(meal); setLoadingState(false); showToast('Erkannt: '+(meal.name||'Mahlzeit'));
     }catch(e){ setLoadingState(false); showToast("KI-Analyse fehlgeschlagen: "+e.message, true); }
 }
