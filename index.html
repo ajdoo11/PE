@@ -25,6 +25,7 @@ tailwind.config = { darkMode:'class', theme:{ extend:{ colors:{ brand:{
 ::-webkit-scrollbar-track{background:#0f172a}
 ::-webkit-scrollbar-thumb{background:#334155;border-radius:3px}
 nav.mobile-nav{padding-bottom:calc(0.5rem + env(safe-area-inset-bottom))}
+@media (max-width:767px){ input,select,textarea{ font-size:16px !important; } }
 </style>
 </head>
 <body class="h-full font-sans antialiased overflow-x-hidden">
@@ -164,9 +165,14 @@ nav.mobile-nav{padding-bottom:calc(0.5rem + env(safe-area-inset-bottom))}
                         <h3 class="text-base font-bold text-white mb-1.5">Essen per Foto erfassen</h3>
                         <p class="text-xs text-slate-400 leading-relaxed mb-4">Foto deiner Mahlzeit/deines Getränks machen – die KI schätzt Kalorien & Nährwerte.</p>
                     </div>
+                    <div id="noKeyBanner" class="hidden mb-2 text-[11px] text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-lg p-2 flex items-center gap-2">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                        <span class="flex-1">KI noch nicht aktiv – ohne Gemini-Key keine echte Erkennung.</span>
+                        <button onclick="toggleSettings(true)" class="font-bold underline whitespace-nowrap">Key eintragen</button>
+                    </div>
                     <div class="space-y-2">
                         <label for="foodPhotoUpload" class="w-full bg-brand-500 hover:bg-brand-600 text-white font-semibold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-brand-500/20 cursor-pointer active:scale-95 text-sm"><i class="fa-solid fa-camera text-base"></i><span>Foto aufnehmen / hochladen</span></label>
-                        <input type="file" id="foodPhotoUpload" accept="image/*" capture="environment" class="hidden" onchange="handlePhotoSelected(event)">
+                        <input type="file" id="foodPhotoUpload" accept="image/*" class="hidden" onchange="handlePhotoSelected(event)">
                         <button onclick="openTextAddModal()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold py-2 px-4 rounded-xl flex items-center justify-center gap-2 transition-all active:scale-95 text-xs"><i class="fa-solid fa-pen-nib"></i><span>Oder Text beschreiben</span></button>
                     </div>
                 </div>
@@ -317,6 +323,10 @@ const firebaseConfig = {
 /* ============================================================ */
 
 const GEMINI_MODEL = "gemini-2.5-flash"; // vision-fähig; Alternative: "gemini-3.5-flash"
+// Optional: URL deines Gemini-Proxys (z.B. Cloudflare Worker). Wenn hier eine URL steht,
+// brauchen Nutzer KEINEN eigenen Key – der Key liegt sicher im Proxy, nicht im Code.
+// Leer lassen = jede Person trägt ihren eigenen Key im Zahnrad-Menü ein.
+const AI_PROXY_URL = "https://gemini-proxy.alarm-pe-gza.workers.dev";
 const ACTIVITY_FACTORS = { sedentary:1.2, light:1.375, moderate:1.55, active:1.725, veryactive:1.9 };
 const GOAL_LABEL = { lose:"Abnehmen", maintain:"Halten", gain:"Aufbauen" };
 
@@ -446,6 +456,7 @@ function startListeners(){
         } else {
             if($('app').classList.contains('hidden')){ showScreen('app'); switchView('today'); }
             $('geminiApiKeyInput').value = localStorage.getItem(GKEY) || "";
+            refreshAiKeyState();
             renderProfileHeader();
             updateDashboard();
         }
@@ -732,64 +743,82 @@ function updateCharts(){
 }
 
 /* ============================================================
-   KI (Gemini / Simulation)
+   KI (Gemini)
 ============================================================ */
 function geminiKey(){ return localStorage.getItem(GKEY) || ""; }
-function handlePhotoSelected(event){
-    const file=event.target.files[0]; if(!file) return;
-    const reader=new FileReader();
-    reader.onload=e=>analyzeFoodImage(e.target.result.split(',')[1], file.type||'image/jpeg');
-    reader.readAsDataURL(file); event.target.value='';
+function aiReady(){ return !!AI_PROXY_URL || !!geminiKey(); }
+function refreshAiKeyState(){ const b=$('noKeyBanner'); if(b) b.classList.toggle('hidden', aiReady()); }
+function requireKey(){
+    if(aiReady()) return true;
+    toggleSettings(true);
+    showToast("Bitte zuerst deinen Gemini-Key eintragen.", true);
+    return false;
 }
+
+// Foto verkleinern (Handy-Fotos sind zu gross für schnelle Analyse)
+function handlePhotoSelected(event){
+    const file=event.target.files[0]; event.target.value=''; if(!file) return;
+    if(!requireKey()) return;
+    const reader=new FileReader();
+    reader.onload=e=>{
+        const img=new Image();
+        img.onload=()=>{
+            const max=1024; let w=img.width, h=img.height;
+            if(w>h && w>max){ h=Math.round(h*max/w); w=max; }
+            else if(h>=w && h>max){ w=Math.round(w*max/h); h=max; }
+            const c=document.createElement('canvas'); c.width=w; c.height=h;
+            c.getContext('2d').drawImage(img,0,0,w,h);
+            const data=c.toDataURL('image/jpeg',0.85).split(',')[1];
+            analyzeFoodImage(data,'image/jpeg');
+        };
+        img.onerror=()=>showToast("Bild konnte nicht gelesen werden.", true);
+        img.src=e.target.result;
+    };
+    reader.readAsDataURL(file);
+}
+
 function setLoadingState(loading,msg="Lade..."){ const m=$('loadingModal'); if(loading){ $('loadingStage').innerText=msg; m.classList.remove('hidden'); m.classList.add('flex'); } else { m.classList.add('hidden'); m.classList.remove('flex'); } }
 
 async function callGemini(parts){
-    const url=`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${geminiKey()}`;
-    const payload={ contents:[{parts}], generationConfig:{responseMimeType:"application/json"} };
+    const payload={ contents:[{parts}], generationConfig:{responseMimeType:"application/json", temperature:0.4} };
+    const url = AI_PROXY_URL ? AI_PROXY_URL : `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${geminiKey()}`;
     let delay=1000;
     for(let attempt=0; attempt<4; attempt++){
         try{
             const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
             if(r.status===429||r.status>=500) throw new Error("retry");
-            if(!r.ok) throw new Error("API "+r.status);
+            if(!r.ok){ const t=await r.text().catch(()=> ''); throw new Error("API "+r.status+(t?(" – "+t.slice(0,120)):"")); }
             const result=await r.json();
             const txt=result.candidates?.[0]?.content?.parts?.[0]?.text;
             if(!txt) throw new Error("leere Antwort");
-            return JSON.parse(txt.replace(/```json|```/g,'').trim());
+            const obj=JSON.parse(txt.replace(/```json|```/g,'').trim());
+            if(!obj || obj.calories===undefined) throw new Error("ungültige Antwort");
+            return obj;
         }catch(err){ if(attempt===3) throw err; await new Promise(res=>setTimeout(res,delay)); delay*=2; }
     }
 }
-const PROMPT_BASE='Antworte AUSSCHLIESSLICH mit JSON, keine Markdown-Backticks. Schätze Kalorien (kcal), Protein (g), Kohlenhydrate (g), Fett (g) für eine normale Portion. Struktur exakt: {"name":"kurzer Name","calories":0,"protein":0,"carbs":0,"fat":0,"explanation":"max 1 kurzer Satz"}.';
+
+const AI_SYS='Du bist ein präziser Ernährungsexperte. Antworte AUSSCHLIESSLICH mit gültigem JSON (kein Markdown, kein Text davor/danach). Schätze realistische Werte für die sichtbare bzw. beschriebene Portion. Erkenne auch internationale und Balkan-Gerichte (z.B. Ćevapčići, Pljeskavica, Burek, Sarma, Japrak, Spaghetti mit Tomatensauce). Wenn du unsicher bist, nimm die wahrscheinlichste Annahme und verweigere NIEMALS. Der "name" MUSS auf Deutsch sein und das Gericht konkret benennen. Format exakt: {"name":"konkretes Gericht","calories":Zahl,"protein":Zahl,"carbs":Zahl,"fat":Zahl,"explanation":"max 1 kurzer Satz"}';
 
 async function analyzeFoodImage(base64,mime){
-    setLoadingState(true,"KI analysiert das Essensfoto...");
-    if(!geminiKey()){
-        setTimeout(()=>{
-            const sims=[
-                {name:"Gegrilltes Hühnchen mit Reis & Brokkoli",calories:580,protein:42,carbs:65,fat:8,explanation:"Ausgewogene proteinreiche Mahlzeit."},
-                {name:"Avocado-Vollkorn-Toast mit Spiegelei",calories:420,protein:18,carbs:32,fat:22,explanation:"Reich an gesunden Fetten."},
-                {name:"Beeren-Smoothie mit Proteinpulver",calories:290,protein:26,carbs:38,fat:3,explanation:"Guter Post-Workout-Snack."}
-            ];
-            addMealToLog(sims[Math.floor(Math.random()*sims.length)]); setLoadingState(false);
-            showToast("Simulation: Foto analysiert (kein API-Key).");
-        },2200); return;
-    }
-    try{ const meal=await callGemini([{text:PROMPT_BASE},{inlineData:{mimeType:mime,data:base64}}]); addMealToLog(meal); setLoadingState(false); showToast("KI: Mahlzeit per Foto erkannt!"); }
-    catch(e){ setLoadingState(false); showToast("KI-Analyse fehlgeschlagen ("+e.message+").", true); }
+    if(!requireKey()) return;
+    setLoadingState(true,"KI erkennt das Essen auf dem Foto...");
+    try{
+        const meal=await callGemini([{text:AI_SYS+' Analysiere dieses Foto einer Mahlzeit/eines Getränks.'},{inlineData:{mimeType:mime,data:base64}}]);
+        addMealToLog(meal); setLoadingState(false); showToast('Erkannt: '+(meal.name||'Mahlzeit'));
+    }catch(e){ setLoadingState(false); showToast("KI-Analyse fehlgeschlagen: "+e.message, true); }
 }
-function openTextAddModal(){ $('textAddModal').classList.remove('hidden'); $('textAddModal').classList.add('flex'); }
+
+function openTextAddModal(){ if(!requireKey()) return; $('textAddModal').classList.remove('hidden'); $('textAddModal').classList.add('flex'); }
 function closeTextAddModal(){ $('textAddModal').classList.add('hidden'); $('textAddModal').classList.remove('flex'); }
 async function submitTextMeal(){
     const text=$('textMealInput').value.trim(); if(!text) return;
+    if(!requireKey()) return;
     closeTextAddModal(); setLoadingState(true,"KI berechnet Nährwerte...");
-    if(!geminiKey()){
-        setTimeout(()=>{
-            addMealToLog({ name:text.substring(0,40)+(text.length>40?"...":""), calories:Math.floor(Math.random()*400)+250, protein:Math.floor(Math.random()*20)+10, carbs:Math.floor(Math.random()*50)+20, fat:Math.floor(Math.random()*15)+5, explanation:"Simulierte Berechnung (kein API-Key)." });
-            setLoadingState(false); $('textMealInput').value=""; showToast("Simulation: Text verarbeitet.");
-        },1800); return;
-    }
-    try{ const meal=await callGemini([{text:`${PROMPT_BASE} Beschreibung: "${text}"`}]); addMealToLog(meal); setLoadingState(false); $('textMealInput').value=""; showToast("KI: Beschreibung ausgewertet!"); }
-    catch(e){ setLoadingState(false); showToast("KI-Textanalyse fehlgeschlagen ("+e.message+").", true); }
+    try{
+        const meal=await callGemini([{text:AI_SYS+' Beschriebenes Essen/Getränk: "'+text+'".'}]);
+        addMealToLog(meal); setLoadingState(false); $('textMealInput').value=""; showToast('Erfasst: '+(meal.name||'Mahlzeit'));
+    }catch(e){ setLoadingState(false); showToast("KI-Textanalyse fehlgeschlagen: "+e.message, true); }
 }
 
 /* ============================================================
@@ -799,7 +828,8 @@ function toggleSettings(show){ const b=$('settingsBanner'); if(show) b.classList
 async function saveApiKey(){
     const v=$('geminiApiKeyInput').value.trim();
     localStorage.setItem(GKEY, v);
-    showToast(v?"Gemini-Key gespeichert – echte KI aktiv!":"Key entfernt – Simulation aktiv.");
+    refreshAiKeyState();
+    showToast(v?"Gemini-Key gespeichert – echte KI aktiv!":"Key entfernt.");
     toggleSettings(false);
 }
 
