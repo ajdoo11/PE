@@ -4,8 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="NutriTrack">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#020617">
+<link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22AI%20NutriTrack%22%2C%22short_name%22%3A%22NutriTrack%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23020617%22%2C%22theme_color%22%3A%22%23020617%22%2C%22start_url%22%3A%22.%22%7D">
 <title>AI NutriTrack – KI Kalorienzähler</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -24,8 +27,17 @@ tailwind.config = { darkMode:'class', theme:{ extend:{ colors:{ brand:{
 ::-webkit-scrollbar{width:6px;height:6px}
 ::-webkit-scrollbar-track{background:#0f172a}
 ::-webkit-scrollbar-thumb{background:#334155;border-radius:3px}
+*{ -webkit-tap-highlight-color: transparent; }
+html,body{ overscroll-behavior-y: none; }
+button,label,a{ touch-action: manipulation; -webkit-user-select:none; user-select:none; }
+header.app-header{ padding-top: calc(0.75rem + env(safe-area-inset-top)); }
+#customToast{ top: calc(1rem + env(safe-area-inset-top)) !important; }
 nav.mobile-nav{padding-bottom:calc(0.5rem + env(safe-area-inset-bottom))}
-@media (max-width:767px){ input,select,textarea{ font-size:16px !important; } }
+@media (max-width:767px){
+  input,select,textarea{ font-size:16px !important; }
+  .app-shell{ padding-bottom: calc(6rem + env(safe-area-inset-bottom)); }
+  #settingsFab{ bottom: calc(6rem + env(safe-area-inset-bottom)); }
+}
 </style>
 </head>
 <body class="h-full font-sans antialiased overflow-x-hidden">
@@ -105,9 +117,9 @@ nav.mobile-nav{padding-bottom:calc(0.5rem + env(safe-area-inset-bottom))}
 <!-- =================================================================
      3) HAUPT-APP
 ================================================================= -->
-<div id="app" class="hidden flex-col justify-between min-h-full pb-24 md:pb-0">
+<div id="app" class="app-shell hidden flex-col justify-between min-h-full pb-24 md:pb-0">
 
-    <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-40 px-4 py-3">
+    <header class="app-header border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-40 px-4 py-3">
         <div class="max-w-6xl mx-auto flex items-center justify-between gap-3">
             <div class="flex items-center gap-2.5 min-w-0">
                 <div class="w-10 h-10 rounded-xl bg-brand-500/10 flex items-center justify-center border border-brand-500/30 text-brand-500 shrink-0"><i class="fa-solid fa-apple-whole text-xl"></i></div>
@@ -151,9 +163,9 @@ nav.mobile-nav{padding-bottom:calc(0.5rem + env(safe-area-inset-bottom))}
                     <div class="mt-4 pt-3 border-t border-slate-800/60 flex justify-between items-center text-xs text-slate-400">
                         <span>Wasser <span id="waterTargetHint" class="text-slate-600"></span></span>
                         <div class="flex items-center gap-1">
-                            <button onclick="adjustWater(-250)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-sky-400"><i class="fa-solid fa-minus text-[10px]"></i></button>
+                            <button onclick="adjustWater(-250)" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 flex items-center justify-center text-sky-400 transition-transform"><i class="fa-solid fa-minus text-xs"></i></button>
                             <span class="font-semibold text-slate-200 px-1" id="waterCount">0 ml</span>
-                            <button onclick="adjustWater(250)" class="w-6 h-6 rounded-lg bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-sky-400"><i class="fa-solid fa-plus text-[10px]"></i></button>
+                            <button onclick="adjustWater(250)" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 active:scale-95 flex items-center justify-center text-sky-400 transition-transform"><i class="fa-solid fa-plus text-xs"></i></button>
                         </div>
                     </div>
                 </div>
