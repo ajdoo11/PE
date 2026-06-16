@@ -36,7 +36,6 @@ header.app-header{ padding-top: calc(0.75rem + env(safe-area-inset-top)); }
 nav.mobile-nav{padding-bottom:calc(0.5rem + env(safe-area-inset-bottom))}
 @media (max-width:767px){
   input,select,textarea{ font-size:16px !important; }
-  #settingsFab{ bottom: calc(6rem + env(safe-area-inset-bottom)); }
 }
 </style>
 </head>
@@ -177,11 +176,6 @@ nav.mobile-nav{padding-bottom:calc(0.5rem + env(safe-area-inset-bottom))}
                         <h3 class="text-base font-bold text-white mb-1.5">Essen per Foto erfassen</h3>
                         <p class="text-xs text-slate-400 leading-relaxed mb-4">Foto deiner Mahlzeit/deines Getränks machen – die KI schätzt Kalorien & Nährwerte.</p>
                     </div>
-                    <div id="noKeyBanner" class="hidden mb-2 text-[11px] text-amber-300 bg-amber-500/10 border border-amber-500/20 rounded-lg p-2 flex items-center gap-2">
-                        <i class="fa-solid fa-triangle-exclamation"></i>
-                        <span class="flex-1">KI noch nicht aktiv – ohne Gemini-Key keine echte Erkennung.</span>
-                        <button onclick="toggleSettings(true)" class="font-bold underline whitespace-nowrap">Key eintragen</button>
-                    </div>
                     <div class="space-y-2">
                         <label for="foodPhotoUpload" class="w-full bg-brand-500 hover:bg-brand-600 text-white font-semibold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg shadow-brand-500/20 cursor-pointer active:scale-95 text-sm"><i class="fa-solid fa-camera text-base"></i><span>Foto aufnehmen / hochladen</span></label>
                         <input type="file" id="foodPhotoUpload" accept="image/*" class="hidden" onchange="handlePhotoSelected(event)">
@@ -283,7 +277,7 @@ nav.mobile-nav{padding-bottom:calc(0.5rem + env(safe-area-inset-bottom))}
     <nav class="mobile-nav shrink-0 bg-slate-900/95 border-t border-slate-800/80 backdrop-blur-lg py-2 px-4 z-40">
         <div class="max-w-xl mx-auto flex justify-between items-center text-center">
             <button onclick="switchView('today')" id="nav-today" class="flex-1 flex flex-col items-center gap-1 py-1.5 text-brand-500 transition-colors"><i class="fa-solid fa-house-chimney text-lg"></i><span class="text-[10px] font-semibold">Heute</span></button>
-            <button onclick="switchView('chat')" id="nav-chat" class="flex-1 flex flex-col items-center gap-1 py-1.5 text-slate-400 hover:text-slate-200 transition-colors"><i class="fa-solid fa-comments text-lg"></i><span class="text-[10px] font-semibold">Familie</span></button>
+            <button onclick="switchView('chat')" id="nav-chat" class="flex-1 flex flex-col items-center gap-1 py-1.5 text-slate-400 hover:text-slate-200 transition-colors"><span class="relative"><i class="fa-solid fa-comments text-lg"></i><span id="chatBadge" class="hidden absolute -top-1.5 -right-2.5 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center leading-none">0</span></span><span class="text-[10px] font-semibold">Familie</span></button>
             <button onclick="switchView('week')" id="nav-week" class="flex-1 flex flex-col items-center gap-1 py-1.5 text-slate-400 hover:text-slate-200 transition-colors"><i class="fa-solid fa-chart-simple text-lg"></i><span class="text-[10px] font-semibold">Woche</span></button>
             <button onclick="switchView('month')" id="nav-month" class="flex-1 flex flex-col items-center gap-1 py-1.5 text-slate-400 hover:text-slate-200 transition-colors"><i class="fa-solid fa-calendar-days text-lg"></i><span class="text-[10px] font-semibold">Monat</span></button>
             <button onclick="switchView('year')" id="nav-year" class="flex-1 flex flex-col items-center gap-1 py-1.5 text-slate-400 hover:text-slate-200 transition-colors"><i class="fa-solid fa-chart-line text-lg"></i><span class="text-[10px] font-semibold">Jahr</span></button>
@@ -314,13 +308,6 @@ nav.mobile-nav{padding-bottom:calc(0.5rem + env(safe-area-inset-bottom))}
         <div class="flex justify-end gap-2.5"><button onclick="closeProfileModal()" class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs px-4 py-2 rounded-xl">Abbrechen</button><button onclick="saveProfile()" class="bg-brand-500 hover:bg-brand-600 text-white font-semibold text-xs px-4 py-2 rounded-xl">Speichern</button></div>
     </div>
 </div>
-
-<div id="settingsBanner" class="fixed bottom-20 right-4 left-4 md:left-auto md:w-96 bg-slate-900 border border-slate-800 rounded-xl p-4 shadow-2xl z-50 transform translate-y-32 opacity-0 transition-all duration-300 pointer-events-none">
-    <div class="flex justify-between items-start mb-2"><h4 class="font-bold text-xs text-white uppercase tracking-wider flex items-center gap-1.5"><i class="fa-solid fa-key text-amber-400"></i> Gemini API-Schlüssel</h4><button onclick="toggleSettings(false)" class="text-slate-400 hover:text-slate-200 text-xs"><i class="fa-solid fa-xmark"></i></button></div>
-    <p class="text-[11px] text-slate-400 mb-3 leading-normal">Für echte Foto-Analyse: kostenlosen Key auf aistudio.google.com holen. Wird in deinem Konto gespeichert und auf allen Geräten genutzt. Ohne Key wird simuliert.</p>
-    <div class="flex gap-2"><input type="password" id="geminiApiKeyInput" placeholder="AIzaSy..." class="flex-1 bg-slate-950 border border-slate-800 rounded-lg text-xs px-2.5 py-1.5 text-slate-100 focus:outline-none focus:border-brand-500"><button onclick="saveApiKey()" class="bg-brand-500 hover:bg-brand-600 text-white font-semibold text-xs px-3 py-1.5 rounded-lg">Sichern</button></div>
-</div>
-<button id="settingsFab" onclick="toggleSettings(true)" class="fixed bottom-24 right-4 md:bottom-6 md:right-6 w-11 h-11 rounded-full bg-slate-800 text-slate-300 hover:bg-slate-700 hover:text-white flex items-center justify-center border border-slate-700 shadow-xl transition-all hover:rotate-45 z-40 hidden"><i class="fa-solid fa-gear"></i></button>
 
 <div id="loadingModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md hidden items-center justify-center z-[57] p-4">
     <div class="bg-slate-900 border border-slate-800 max-w-sm w-full rounded-2xl p-6 text-center space-y-4">
@@ -372,7 +359,7 @@ const GKEY='gemini_api_key';
 let todayDoc=null, currentDayKey=null, historyCache=[];
 let unsubProfile=null, unsubToday=null;
 let chartsReady=false, weeklyChart, monthlyChart, yearlyChart;
-let chatUnsub=null, chatStarted=false;
+let chatUnsub=null, chatStarted=false, chatNewestTs=0;
 let authMode="login";
 
 const $ = id => document.getElementById(id);
@@ -387,7 +374,6 @@ function showScreen(name){
         el.classList.toggle('hidden', !on);
         el.classList.toggle('flex', on);
     });
-    $('settingsFab').classList.toggle('hidden', name!=='app');
 }
 
 /* ============================================================
@@ -474,7 +460,7 @@ function logout(){
     localStorage.removeItem(SESSION_KEY);
     if(unsubProfile){ unsubProfile(); unsubProfile=null; }
     if(unsubToday){ unsubToday(); unsubToday=null; }
-    if(chatUnsub){ chatUnsub(); chatUnsub=null; } chatStarted=false;
+    if(chatUnsub){ chatUnsub(); chatUnsub=null; } chatStarted=false; chatNewestTs=0; updateChatBadge(0);
     currentUser=null; profile=null; todayDoc=null;
     showScreen('authScreen');
 }
@@ -493,9 +479,8 @@ function startListeners(){
             showScreen('setupScreen');
         } else {
             if($('app').classList.contains('hidden')){ showScreen('app'); switchView('today'); }
-            $('geminiApiKeyInput').value = localStorage.getItem(GKEY) || "";
-            refreshAiKeyState();
             renderProfileHeader();
+            startChat();
             updateDashboard();
         }
     }, err=>{ showToast("Sync-Fehler: "+err.code, true); });
@@ -785,11 +770,9 @@ function updateCharts(){
 ============================================================ */
 function geminiKey(){ return localStorage.getItem(GKEY) || ""; }
 function aiReady(){ return !!AI_PROXY_URL || !!geminiKey(); }
-function refreshAiKeyState(){ const b=$('noKeyBanner'); if(b) b.classList.toggle('hidden', aiReady()); }
 function requireKey(){
     if(aiReady()) return true;
-    toggleSettings(true);
-    showToast("Bitte zuerst deinen Gemini-Key eintragen.", true);
+    showToast("KI-Dienst momentan nicht verfügbar.", true);
     return false;
 }
 
@@ -845,18 +828,6 @@ async function submitTextMeal(){
 }
 
 /* ============================================================
-   SETTINGS (Gemini Key -> Firestore)
-============================================================ */
-function toggleSettings(show){ const b=$('settingsBanner'); if(show) b.classList.remove('pointer-events-none','translate-y-32','opacity-0'); else b.classList.add('pointer-events-none','translate-y-32','opacity-0'); }
-async function saveApiKey(){
-    const v=$('geminiApiKeyInput').value.trim();
-    localStorage.setItem(GKEY, v);
-    refreshAiKeyState();
-    showToast(v?"Gemini-Key gespeichert – echte KI aktiv!":"Key entfernt.");
-    toggleSettings(false);
-}
-
-/* ============================================================
    VIEW SWITCH / TOAST / UHR
 ============================================================ */
 function switchView(viewName){
@@ -867,7 +838,7 @@ function switchView(viewName){
         else { el.classList.add('hidden'); nav.className="flex-1 flex flex-col items-center gap-1 py-1.5 text-slate-400 hover:text-slate-200 transition-colors"; }
     });
     if(['week','month','year'].includes(viewName)){ ensureCharts(); loadHistory().then(updateCharts); }
-    if(viewName==='chat'){ startChat(); }
+    if(viewName==='chat'){ startChat(); markChatRead(); }
 }
 
 /* ============================================================
@@ -883,8 +854,27 @@ function startChat(){
         // abgelaufene Fotos löschen (Speicher freigeben)
         docs.forEach(m=>{ if(m.expiresAt && m.expiresAt<now){ chatCol().doc(m.id).delete().catch(()=>{}); } });
         const visible=docs.filter(m=>!(m.expiresAt && m.expiresAt<now)).reverse();
+        chatNewestTs = visible.reduce((mx,m)=>Math.max(mx, m.createdAt||0), 0);
         renderChat(visible);
+        if(chatActive()){
+            markChatRead();
+        } else {
+            const seen=Number(localStorage.getItem('chat_seen_'+currentUser))||0;
+            const unread=visible.filter(m=>m.uid!==currentUser && (m.createdAt||0)>seen).length;
+            updateChatBadge(unread);
+        }
     }, err=>{ /* offline ok */ });
+}
+function chatActive(){ const v=$('view-chat'); return v && !v.classList.contains('hidden') && !$('app').classList.contains('hidden'); }
+function markChatRead(){
+    if(!currentUser) return;
+    localStorage.setItem('chat_seen_'+currentUser, String(chatNewestTs || Date.now()));
+    updateChatBadge(0);
+}
+function updateChatBadge(n){
+    const b=$('chatBadge'); if(!b) return;
+    if(n>0){ b.textContent = n>99?'99+':String(n); b.classList.remove('hidden'); }
+    else { b.classList.add('hidden'); }
 }
 function renderChat(msgs){
     const c=$('chatMessages'), ph=$('chatPlaceholder');
